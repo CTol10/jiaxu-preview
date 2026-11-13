@@ -2,23 +2,47 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>家续 · 家族地图</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css?v=motion1">
-<script type="module" src="web.js?v=motion1"></script>
+<title>家续 · 林氏家谱</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css?v=motion1">
+<link rel="stylesheet" href="scroll.css?v=scroll1">
+<script type="module" src="web.js?v=scroll1"></script>
 </head>
 <body>
-<header><nav><a class="brand" href="#"><img src="mark.svg" alt="">家续</a><a href="#atlas">家族地图</a><a href="#people">人物总览</a><a href="#records">史料对照</a><a class="mobile-link" href="../">移动端 ↗</a></nav></header>
-<main>
-<section class="hero"><p class="eyebrow">家续 · Web 原型</p><h1>一张地图，<br>看见家族的来路。</h1><p>从泉州南安到台南，沿着旧谱、家书和口述，追溯一家人的山海足迹。</p><a class="primary magnetic" href="#atlas"><span>探索家族地图 ↓</span></a></section>
-<section class="atlas" id="atlas" aria-label="家族迁徙地图">
+<header><nav><a class="brand" href="#"><img src="mark.svg" alt="">家续</a><a href="#cover">族谱阅读</a></nav></header>
+<main class="reading-layout">
+<aside class="contents">
+<div class="contents-inner"><p class="eyebrow">林氏家谱</p><h2>卷内目录</h2>
+<nav aria-label="卷内目录">
+<a href="#cover">卷首</a><a href="#lineage">世系</a><a href="#journey">迁徙</a><a href="#people">人物</a><a href="#records">史料</a>
+</nav>
+<div class="reading-progress" aria-hidden="true"><span></span></div></div>
+</aside>
+<div class="scroll-volume">
+<section class="hero scroll-cover" id="cover">
+<p class="eyebrow">泉州南安 · 家藏演示卷</p><h1>林氏家谱</h1>
+<p>由一脉世系读起，沿旧谱与家书寻访家族来处。</p>
+<button class="primary magnetic" type="button" aria-expanded="false" aria-controls="scroll-pages"><span>展开族谱 ↓</span></button>
+</section>
+<div class="scroll-mouth" aria-hidden="true"></div>
+<div class="scroll-pages" id="scroll-pages">
+<div class="scroll-ink">
+<section class="feature lineage" id="lineage" aria-labelledby="lineage-title">
+<div class="intro"><p class="eyebrow">世系</p><h2 id="lineage-title" tabindex="-1">林氏世系图</h2><p>点选人物，翻到对应的家人小传。</p></div>
+<div class="pedigree" id="pedigree"></div>
+</section>
+<section class="feature journey" id="journey" aria-labelledby="journey-title">
+<div class="intro"><p class="eyebrow">迁徙</p><h2 id="journey-title" tabindex="-1">由南安，渡向山海</h2><p>打开地图，沿着家书与口述查阅三处地点。</p></div>
+<div class="atlas" id="atlas" aria-label="家族迁徙地图">
 <div class="map-wrap">
 <canvas id="globe" aria-hidden="true"></canvas><canvas id="map" aria-label="家族地点分布示意"></canvas><div id="markers"></div>
 <div class="map-tools" role="group" aria-label="地图视野"><button data-view="globe">地球</button><button data-view="world">世界</button><button data-view="region">东亚</button><button data-view="local">闽台</button></div>
 <p class="map-credit">Natural Earth 底图 · 迁徙线索示意</p>
 </div>
 <aside class="map-detail"><p class="eyebrow">林文海的迁徙线索</p><div id="places" role="group" aria-label="地点"></div><div id="place-detail" aria-live="polite"></div></aside>
+</div>
 </section>
-<section class="feature" id="people"><div class="intro"><p class="eyebrow">家族总览</p><h2>地名背后，是家人。</h2><p>按姓名或出生地查找人物，再查看亲属关系与资料。</p></div>
+<section class="feature" id="people"><div class="intro"><p class="eyebrow">家族总览</p><h2 tabindex="-1">家人小传</h2><p>按姓名或出生地查找人物，再查看亲属关系与资料。</p></div>
 <div class="people-panel"><div class="directory"><label for="search">查找家人</label><input id="search" type="search" placeholder="输入姓名或地名"><div id="people-list"></div></div><article id="person-detail" aria-live="polite"></article></div></section>
-<section class="feature records" id="records"><div class="intro"><p class="eyebrow">史料对照</p><h2>把原始记载摆在一起。</h2><p>对照两份资料，分清已有记载和待核线索。</p></div><div class="record-grid" id="record-grid"></div></section>
-</main><footer>家续 · 虚构演示家族　<a href="../">打开移动端原型 ↗</a></footer>
+<section class="feature records" id="records"><div class="intro"><p class="eyebrow">史料对照</p><h2 tabindex="-1">谱页与家书</h2><p>对照两份资料，分清已有记载和待核线索。</p></div><div class="record-grid" id="record-grid"></div></section>
+</div></div><div class="scroll-end" aria-hidden="true"></div></div>
+</main><footer>家续 · 虚构演示家族</footer>
 </body></html>

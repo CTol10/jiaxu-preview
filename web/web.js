@@ -1,6 +1,7 @@
+import {setupVolume} from './volume.js';
 import {setupMotion, enterDetail, reducedMotion} from './motion.js';
 import {drawGlobe} from './globe.js';
-import {peopleSeed, sourceSeed} from './demo.js';
+import {peopleSeed, sourceSeed, memorySeed} from './demo.js';
 
 const $ = selector => document.querySelector(selector);
 const make = (tag, text, className) => {
@@ -22,11 +23,8 @@ let flightFrame = 0;
 let flying = false;
 let activePlace = 0;
 let land;
-let people = peopleSeed;
-try {
-  const saved = JSON.parse(localStorage.getItem('jiaxu-mobile-offline-v2'));
-  if (Array.isArray(saved?.people) && saved.people.length) people = saved.people.filter(p => !p.archived);
-} catch {}
+const people = peopleSeed;
+let personTab = 'bio';
 let personId = people.some(p => p.id === 'p3') ? 'p3' : people[0]?.id;
 const canvas = $('#map');
 const ctx = canvas.getContext('2d');
@@ -180,27 +178,71 @@ function renderPeople(animate = false) {
     const button = make('button',p.name,'person-button');
     button.dataset.person = p.id;
     button.setAttribute('aria-pressed',String(p.id === personId));
-    button.onclick = () => { personId = p.id; renderPeople(true); list.querySelector('[aria-pressed=true]')?.focus(); };
+    button.onclick = () => { personId = p.id; personTab = 'bio'; renderPeople(true); list.querySelector('[aria-pressed=true]')?.focus(); };
     return button;
   }));
   if (!matches.length) list.append(make('p','未找到匹配人物。','meta'));
   const person = people.find(p => p.id===personId);
   if (!person) return;
-  const relations = make('div',null,'relations');
-  for (const [label,id] of [['父亲',person.father],['母亲',person.mother],['配偶',person.spouse]]) {
-    const relative = people.find(p => p.id===id);
-    if (!relative) continue;
-    const button = make('button',label+' · '+relative.name);
-    button.onclick = () => { personId = id; $('#search').value = ''; renderPeople(true); $('#person-detail h3').focus(); };
-    relations.append(button);
-  }
+  renderPersonDetail(person,animate);
+}
+
+function renderPersonDetail(person, animate = false) {
   const heading = make('h3',person.name);
   heading.tabIndex = -1;
-  const link = make('a','在移动端查看完整档案 ↗','detail-link');
-  link.href = '../#person/'+encodeURIComponent(person.id)+'/details';
-  $('#person-detail').replaceChildren(make('p','人物资料','eyebrow'),heading,make('p',[person.birth,person.place].filter(Boolean).join(' · ') || '年代与地点待补','meta'),make('p',person.bio || '暂无生平记述。'),relations,make('p'));
-  document.getElementById("person-detail").lastElementChild.append(link);
-  if (animate) enterDetail($('#person-detail'));
+  const tabs = make('div',null,'person-tabs');
+  tabs.setAttribute('role','group');
+  tabs.setAttribute('aria-label','人物档案分类');
+  const detail = make('div');
+  for (const [key,label] of [['bio','生平'],['family','亲属'],['sources','来源'],['memories','记忆']]) {
+    const button = make('button',label);
+    button.dataset.tab = key;
+    button.setAttribute('aria-pressed',String(personTab===key));
+    button.onclick = () => {
+      personTab = key;
+      renderPersonDetail(person,true);
+      document.querySelector('.person-tabs [aria-pressed=true]').focus({preventScroll:true});
+    };
+    tabs.append(button);
+  }
+  if (personTab === 'bio') detail.append(make('p',person.bio || '暂无生平记述。'));
+  if (personTab === 'family') {
+    const relations = make('div',null,'relations');
+    const relatives = [['父亲',person.father],['母亲',person.mother],['配偶',person.spouse],
+      ...people.filter(p => p.father===person.id || p.mother===person.id).map(p => ['子女',p.id])];
+    for (const [label,id] of relatives) {
+      const relative = people.find(p => p.id===id);
+      if (!relative) continue;
+      const button = make('button',label+' · '+relative.name);
+      button.onclick = () => {
+        personId = id;
+        $('#search').value = '';
+        renderPeople(true);
+        $('#person-detail h3').focus({preventScroll:true});
+      };
+      relations.append(button);
+    }
+    detail.append(relations.childElementCount ? relations : make('p','暂无关联亲属。'));
+  }
+  if (personTab === 'sources' || personTab === 'memories') {
+    const items = (personTab === 'sources' ? sourceSeed : memorySeed).filter(item => item.person===person.id);
+    for (const item of items) {
+      const row = make('article',null,'person-material');
+      row.append(make('strong',item.title),make('p',item.year+' · '+item.desc,'meta'));
+      if (item.quote) {
+        row.append(make('blockquote',item.quote));
+        const link = make('a','打开史料对照 ↓','detail-link');
+        link.href = '#records';
+        link.onclick = () => { $('#record-a').value = item.id; $('#record-a').onchange(); };
+        row.append(link);
+      } else if (item.body) row.append(make('p',item.body));
+      detail.append(row);
+    }
+    if (!items.length) detail.append(make('p',personTab === 'sources' ? '暂无关联来源。' : '暂无关联记忆。'));
+  }
+  $('#person-detail').replaceChildren(make('p','人物资料','eyebrow'),heading,
+    make('p',[person.birth,person.death,person.place].filter(Boolean).join(' · ') || '年代与地点待补','meta'),tabs,detail);
+  if (animate) enterDetail(detail);
 }
 
 function renderRecords() {
@@ -227,9 +269,45 @@ function renderRecords() {
   $('#record-grid').replaceChildren(...cards);
 }
 
+function renderPedigree() {
+  const root = people.find(p => p.id === 'p0') ?? people[0];
+  if (!root) return;
+  function branch(person, depth, ancestors) {
+    const item = make('li');
+    const button = make('button',person.name,'lineage-person');
+    button.type = 'button';
+    button.append(make('small',[person.birth,person.place].filter(Boolean).join(' · ')));
+    button.onclick = () => {
+      personId = person.id;
+      personTab = 'bio';
+      $('#search').value = '';
+      renderPeople(true);
+      location.hash = 'people';
+      $('#person-detail h3')?.focus({preventScroll:true});
+    };
+    item.append(button);
+    if (depth === 0) return item;
+    const seen = new Set([...ancestors,person.id]);
+    const parents = [...new Set([person.father,person.mother])]
+      .map(id => people.find(p => p.id === id))
+      .filter(parent => parent && !seen.has(parent.id));
+    if (parents.length) {
+      const row = make('ul');
+      row.append(...parents.map(parent => branch(parent,depth-1,seen)));
+      item.prepend(row);
+    }
+    return item;
+  }
+  const tree = make('ul');
+  tree.append(branch(root,2,new Set()));
+  $('#pedigree').replaceChildren(tree);
+}
+
 document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => setView(button.dataset.view));
 $('#search').addEventListener('input',() => renderPeople());
 new ResizeObserver(drawMap).observe(canvas);
+renderPedigree();
+setupVolume();
 setupMotion();
 setView(view);
 selectPlace(0);

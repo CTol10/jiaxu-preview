@@ -1,0 +1,60 @@
+:root{--parchment:#f6edda;--parchment-edge:#c8a879;--book-ink:#372f23}
+body{background:#eae9df}
+header{background:#f3f2e9ed}
+header nav{max-width:1480px}
+.reading-layout{max-width:1480px;display:grid;grid-template-columns:172px minmax(0,1fr);gap:28px;padding:28px 32px 0;align-items:start}
+.contents{position:sticky;top:88px}
+.contents-inner{border-left:1px solid #b6b39e;padding:20px 0 16px 16px}
+.contents h2{font-size:22px;margin:0 0 16px}
+.contents nav{display:grid;gap:4px;min-height:0;padding:0}
+.contents nav a{padding:9px 12px;border-radius:8px}
+.contents nav a:hover{background:#dedfce}
+.contents a[aria-current]{background:#d9e2d0;color:#315421;font-weight:700}
+.reading-progress{height:2px;background:#d4d1c0;margin-top:20px}
+.reading-progress span{display:block;background:var(--green);height:100%;transform-origin:left;transform:scaleX(0)}
+.scroll-volume{position:relative;min-width:0;color:var(--book-ink);border-radius:16px;box-shadow:0 16px 40px #503b2520}
+.scroll-cover,.scroll-ink{background:linear-gradient(90deg,#c5a57748,transparent 8%,transparent 92%,#be996a43),var(--parchment);border-inline:1px solid #b7986a}
+.scroll-cover{padding:76px 16px 64px;border-radius:16px 16px 0 0;border-top:1px solid #b7986a}
+.scroll-cover h1,.scroll-ink .intro h2{font-family:"Songti SC",SimSun,serif;letter-spacing:.03em}
+.scroll-cover .primary{border:0;cursor:pointer}
+.scroll-cover::before{background:radial-gradient(320px circle at var(--light-x,50%) var(--light-y,50%),#fff8e6,transparent)}
+.scroll-mouth,.scroll-end{position:relative;margin-inline:-7px;border:1px solid #a98756;border-radius:8px;background:linear-gradient(#cfaf7a,#f7e8c5 28%,#e2c796 63%,#b58d59);height:22px;box-shadow:0 4px 8px #49351e30}
+.scroll-mouth{z-index:2;margin-bottom:-11px;transform:translateY(0);transition:transform .76s var(--ease-out),opacity .76s}
+.unrolled .scroll-mouth{transform:translateY(-9px) scaleY(.5);opacity:.52}
+.scroll-pages{display:grid;grid-template-rows:0fr;transition:grid-template-rows .76s var(--ease-out)}
+.unrolled .scroll-pages{grid-template-rows:1fr}
+.scroll-ink{min-height:0;min-width:0;overflow:hidden;padding-inline:clamp(12px,3vw,42px)}
+.scroll-ink>.feature{padding-top:56px;padding-bottom:40px}
+.scroll-ink>.feature+.feature{border-top:1px solid #c8aa7c75}
+.scroll-ink .intro h2{font-size:clamp(28px,4.4vw,48px)}
+.scroll-ink .atlas,.scroll-ink .people-panel,.scroll-ink .record{border-color:#c9b48b;background:#fff9ea}
+.scroll-ink .directory{background:#f0e4cb}
+.scroll-end{height:16px;margin-top:-4px}
+.pedigree{overflow:auto;padding:12px 4px 20px;text-align:center}
+.pedigree ul{padding:0;list-style:none;display:flex;justify-content:center;gap:12px;min-width:max-content;margin:0 auto}
+.pedigree li{position:relative;display:flex;flex-direction:column;align-items:center}
+.pedigree li>ul{position:relative;margin-bottom:23px}
+.pedigree li>ul::after{content:"";position:absolute;top:100%;left:50%;height:23px;border-left:1px solid #9b8965}
+.pedigree li>ul>li::after{content:"";position:absolute;top:100%;width:100%;height:12px;border-bottom:1px solid #9b8965}
+.lineage-person{background:#fff9ea;color:var(--book-ink);border:1px solid #b9a27e;border-radius:8px;padding:8px 10px;min-width:106px}
+.lineage-person:hover,.lineage-person:focus-visible{background:#e5ead8;border-color:var(--green)}
+.lineage-person small{display:block;color:var(--quiet);margin-top:4px;font-size:10px}
+.person-tabs{display:flex;gap:4px;flex-wrap:wrap;margin:16px 0;border-bottom:1px solid #d6c7a7}
+.person-tabs button{border:0;background:none;color:var(--ink);padding:8px 12px}
+.person-tabs button[aria-pressed=true]{color:var(--green);box-shadow:inset 0 -2px var(--green);font-weight:700}
+.person-material{margin:12px 0}
+@media(max-width:1100px){.reading-layout .atlas{grid-template-columns:1fr}.reading-layout .map-wrap{min-height:360px}}
+@media(max-width:760px){
+  .reading-layout{display:block;padding:0 12px}
+  .contents{top:60px;z-index:4;background:#eae9df}
+  .contents-inner{padding:4px 0 8px;border:0}
+  .contents-inner>h2,.contents-inner>.eyebrow{display:none}
+  .contents nav{display:flex;justify-content:space-around;gap:2px}
+  .contents nav a{padding:8px}
+  .reading-progress{margin-top:4px}
+  .reading-layout section[id]{scroll-margin-top:124px}
+  .scroll-cover{padding:52px 12px}
+  .reading-layout .map-wrap{min-height:290px}
+  .pedigree>ul{margin-inline:0}
+}
+@media(prefers-reduced-motion:reduce){.scroll-pages,.scroll-mouth{transition:none}}

@@ -26,4 +26,4 @@ const memorySeed=[
  {id:'m6',title:'把家里的故事继续讲下去',type:'story',year:'2026',person:'p1',desc:'从姓名到经历，从一张相片到一段声音，家谱也是正在发生的生活。',body:'我们从自己开始，记录父母、祖辈和孩子。每一个看似普通的日子，都可能成为下一代想了解的故事。记录可以很简单：一张图、一句话、一段声音。',privacy:'家庭成员'}
 ];
 const sourceSeed=[{id:'s1',title:'林氏家谱 卷二 第18页',desc:'演示谱页 · 家庭收藏副本 · 卷页及字形待核',image:'assets/genealogy.svg',year:'1936',quote:'文海，字承远。原居泉州南安。',type:'谱牒',person:'p3'},{id:'s2',title:'台南家书 第1页',desc:'演示家书 · 林建民提供 · 记载往来地点',image:'assets/letter.svg',year:'1962',quote:'每逢佳节，想起家门前的榕树和院里长辈们的声音。',type:'家书',person:'p3'},{id:'s3',title:'家人补记 口述记录',desc:'演示口述 · 内容与谱页分别保留 · 待家人复核',image:'assets/courtyard.svg',year:'2024',quote:'祖父提过，先到金门，后来在台南安家。年份还要查一查。',type:'口述',person:'p3'}];
-export {peopleSeed,sourceSeed};
+export {peopleSeed,sourceSeed,memorySeed};
