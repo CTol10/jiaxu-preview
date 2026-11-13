@@ -2,17 +2,17 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>家续 · 家族地图</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css">
-<script type="module" src="web.js"></script>
+<title>家续 · 家族地图</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css?v=motion1">
+<script type="module" src="web.js?v=motion1"></script>
 </head>
 <body>
 <header><nav><a class="brand" href="#"><img src="mark.svg" alt="">家续</a><a href="#atlas">家族地图</a><a href="#people">人物总览</a><a href="#records">史料对照</a><a class="mobile-link" href="../">移动端 ↗</a></nav></header>
 <main>
-<section class="hero"><p class="eyebrow">家续 · Web 原型</p><h1>一张地图，<br>看见家族的来路。</h1><p>从泉州南安到台南，沿着旧谱、家书和口述，追溯一家人的山海足迹。</p><a class="primary" href="#atlas">探索家族地图 ↓</a></section>
+<section class="hero"><p class="eyebrow">家续 · Web 原型</p><h1>一张地图，<br>看见家族的来路。</h1><p>从泉州南安到台南，沿着旧谱、家书和口述，追溯一家人的山海足迹。</p><a class="primary magnetic" href="#atlas"><span>探索家族地图 ↓</span></a></section>
 <section class="atlas" id="atlas" aria-label="家族迁徙地图">
 <div class="map-wrap">
-<canvas id="map" aria-label="家族地点分布示意"></canvas><div id="markers"></div>
-<div class="map-tools" role="group" aria-label="地图视野"><button data-view="world">世界</button><button data-view="region">东亚</button><button data-view="local">闽台</button></div>
+<canvas id="globe" aria-hidden="true"></canvas><canvas id="map" aria-label="家族地点分布示意"></canvas><div id="markers"></div>
+<div class="map-tools" role="group" aria-label="地图视野"><button data-view="globe">地球</button><button data-view="world">世界</button><button data-view="region">东亚</button><button data-view="local">闽台</button></div>
 <p class="map-credit">Natural Earth 底图 · 迁徙线索示意</p>
 </div>
 <aside class="map-detail"><p class="eyebrow">林文海的迁徙线索</p><div id="places" role="group" aria-label="地点"></div><div id="place-detail" aria-live="polite"></div></aside>

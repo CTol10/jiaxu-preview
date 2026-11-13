@@ -1,3 +1,5 @@
+import {setupMotion, enterDetail, reducedMotion} from './motion.js';
+import {drawGlobe} from './globe.js';
 import {peopleSeed, sourceSeed} from './demo.js';
 
 const $ = selector => document.querySelector(selector);
@@ -13,7 +15,11 @@ const places = [
   {name:'台南', short:'台南', lon:120.20, lat:22.99, date:'1962 · 家书通信地', source:'s2', note:'家书可帮助确认通信地点，具体迁居时间仍待核对。'}
 ];
 const views = {world:[0,14,360,155],region:[119,30,54,37],local:[119.3,24.05,5.8,3.4]};
-let view = 'world';
+let view = 'globe';
+let camera = views.world;
+let flight = 0;
+let flightFrame = 0;
+let flying = false;
 let activePlace = 0;
 let land;
 let people = peopleSeed;
@@ -27,17 +33,19 @@ const ctx = canvas.getContext('2d');
 const pins = $('#markers');
 
 function drawMap() {
+  const globe = view === 'globe';
+  if (globe && land) drawGlobe($('#globe'),land);
   const {width, height} = canvas.getBoundingClientRect();
   const ratio = window.devicePixelRatio || 1;
   canvas.width = width * ratio;
   canvas.height = height * ratio;
   ctx.setTransform(ratio,0,0,ratio,0,0);
-  const [centerX,centerY,spanX,spanY] = views[view];
+  const [centerX,centerY,spanX,spanY] = camera;
   const scale = Math.min(width/spanX,height/spanY);
   const project = (lon,lat) => [width/2+(lon-centerX)*scale,height/2-(lat-centerY)*scale];
   ctx.fillStyle = '#e2ebe4';
   ctx.fillRect(0,0,width,height);
-  const grid = view === 'world' ? 30 : view === 'region' ? 10 : 1;
+  const grid = spanX > 100 ? 30 : spanX > 15 ? 10 : 1;
   ctx.strokeStyle = '#c9d8cd';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -55,7 +63,7 @@ function drawMap() {
   for (const feature of land?.features ?? []) {
     const {type,coordinates} = feature.geometry;
     for (const polygon of type === 'Polygon' ? [coordinates] : coordinates) {
-      for (const offset of view === 'world' ? [-360,0,360] : [0]) {
+      for (const offset of spanX > 100 ? [-360,0,360] : [0]) {
         ctx.beginPath();
         for (const ring of polygon) {
           ring.forEach(([lon,lat],i) => {
@@ -69,12 +77,13 @@ function drawMap() {
     }
   }
   const points = places.map(p => project(p.lon,p.lat));
-  if (view === 'local') {
+  if (view === 'local' && !flying) {
     ctx.beginPath();
     points.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y));
     ctx.setLineDash([6,5]);ctx.lineWidth = 2;
     ctx.strokeStyle = '#986037';ctx.stroke();ctx.setLineDash([]);
   }
+  if (flying) return;
   pins.replaceChildren();
   const indices = view === 'local' ? [0,1,2] : [activePlace];
   for (const i of indices) {
@@ -82,23 +91,60 @@ function drawMap() {
     const group = view !== 'local';
     const label = group ? '闽台 · 3 处地点' : places[i].short;
     pin.append(make('span',label));
-    pin.style.left = points[i][0]+'px';
-    pin.style.top = points[i][1]+'px';
+    pin.style.left = globe ? '50%' : points[i][0]+'px';
+    pin.style.top = globe ? '50%' : points[i][1]+'px';
     pin.dataset.label = String(group || i !== 1);
     pin.setAttribute('aria-pressed',String(!group && i === activePlace));
-    pin.setAttribute('aria-label',group ? '放大查看闽台三处地点' : '查看'+label);
+    pin.setAttribute('aria-label',group ? (globe ? '进入世界地图' : '放大查看闽台三处地点') : '查看'+label);
     pin.onclick = () => {
-      if (group) setView('local');
+      if (globe) { setView('world',true); return; }
+      if (group) setView('local',true);
       selectPlace(i);
-      pins.querySelector('[aria-pressed=true]')?.focus();
+      if (!flying) pins.querySelector('[aria-pressed=true]')?.focus();
     };
     pins.append(pin);
   }
 }
-function setView(next) {
+function setView(next, restorePinFocus = false) {
+  if (next === view && flying) return;
+  const previous = view;
   view = next;
+  const wrap = $('.map-wrap');
+  wrap.dataset.mode = next;
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.view===view)));
-  drawMap();
+  cancelAnimationFrame(flightFrame);
+  const target = views[next] ?? views.world;
+  const start = camera;
+  const finish = () => {
+    camera = target;
+    flying = false;
+    pins.inert = false;
+    wrap.classList.remove('flying');
+    drawMap();
+    if (restorePinFocus) (pins.querySelector('[aria-pressed=true]') ?? pins.querySelector('button'))?.focus({preventScroll:true});
+  };
+  if (next === 'globe' || previous === next || reducedMotion.matches ||
+      start.every((value,i) => value === target[i])) {
+    finish();
+    return;
+  }
+  const started = performance.now();
+  const id = ++flight;
+  flying = true;
+  pins.inert = true;
+  wrap.classList.add('flying');
+  const step = now => {
+    if (id !== flight) return;
+    const progress = Math.min(1,(now-started)/840);
+    const eased = progress * progress * (3-2*progress);
+    camera = start.map((value,i) => i < 2
+      ? value+(target[i]-value)*eased
+      : value*Math.pow(target[i]/value,eased));
+    drawMap();
+    if (progress < 1) flightFrame = requestAnimationFrame(step);
+    else finish();
+  };
+  flightFrame = requestAnimationFrame(step);
 }
 function selectPlace(index) {
   activePlace = index;
@@ -122,10 +168,11 @@ function selectPlace(index) {
     $('#record-a').onchange();
   };
   $('#place-detail').replaceChildren(make('p',place.date,'meta'),make('h2',place.name),make('p',place.note),make('blockquote',source.quote),make('p',source.title,'meta'),link);
+  enterDetail($('#place-detail'));
   drawMap();
 }
 
-function renderPeople() {
+function renderPeople(animate = false) {
   const query = $('#search').value.trim().toLowerCase();
   const matches = people.filter(p => [p.name,p.place,p.origin].some(field => String(field ?? '').toLowerCase().includes(query)));
   const list = $('#people-list');
@@ -133,7 +180,7 @@ function renderPeople() {
     const button = make('button',p.name,'person-button');
     button.dataset.person = p.id;
     button.setAttribute('aria-pressed',String(p.id === personId));
-    button.onclick = () => { personId = p.id; renderPeople(); list.querySelector('[aria-pressed=true]')?.focus(); };
+    button.onclick = () => { personId = p.id; renderPeople(true); list.querySelector('[aria-pressed=true]')?.focus(); };
     return button;
   }));
   if (!matches.length) list.append(make('p','未找到匹配人物。','meta'));
@@ -144,7 +191,7 @@ function renderPeople() {
     const relative = people.find(p => p.id===id);
     if (!relative) continue;
     const button = make('button',label+' · '+relative.name);
-    button.onclick = () => { personId = id; $('#search').value = ''; renderPeople(); $('#person-detail h3').focus(); };
+    button.onclick = () => { personId = id; $('#search').value = ''; renderPeople(true); $('#person-detail h3').focus(); };
     relations.append(button);
   }
   const heading = make('h3',person.name);
@@ -153,6 +200,7 @@ function renderPeople() {
   link.href = '../#person/'+encodeURIComponent(person.id)+'/details';
   $('#person-detail').replaceChildren(make('p','人物资料','eyebrow'),heading,make('p',[person.birth,person.place].filter(Boolean).join(' · ') || '年代与地点待补','meta'),make('p',person.bio || '暂无生平记述。'),relations,make('p'));
   document.getElementById("person-detail").lastElementChild.append(link);
+  if (animate) enterDetail($('#person-detail'));
 }
 
 function renderRecords() {
@@ -170,6 +218,7 @@ function renderRecords() {
       image.src = './'+s.image.split('/').at(-1);
       image.alt = s.type+'演示插图';
       body.replaceChildren(image,make('h3',s.title),make('p',s.year+' · '+s.desc,'meta'),make('blockquote',s.quote));
+      enterDetail(body);
     };
     select.onchange();
     card.append(select,body);
@@ -179,8 +228,9 @@ function renderRecords() {
 }
 
 document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => setView(button.dataset.view));
-$('#search').addEventListener('input',renderPeople);
+$('#search').addEventListener('input',() => renderPeople());
 new ResizeObserver(drawMap).observe(canvas);
+setupMotion();
 setView(view);
 selectPlace(0);
 renderPeople();
@@ -191,6 +241,3 @@ fetch('./land.json').then(response => {
 }).then(data => { land = data; drawMap(); }).catch(() => {
   $('.map-credit').textContent = '底图暂不可用 · 仍可查看地点和史料';
 });
-
-
-
