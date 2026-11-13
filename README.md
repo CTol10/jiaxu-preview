@@ -6,6 +6,6 @@
 
 全部人物和资料均为虚构演示数据，AI 为预置流程。编辑仅保存在当前浏览器，未连接生产服务。
 
-此仓库仅用于原型预览。项目书、报价、memory 及开发源码保存在独立私有仓库中。
+此仓库仅用于原型预览。memory 及开发源码保存在独立私有仓库中。
 
 更新方式：在开发仓库 source/ 执行 node scripts/build-mobile.mjs，将生成的 prototype/offline.html 复制为此仓库 index.html，提交并推送 main 分支。GitHub Pages 自动更新。
