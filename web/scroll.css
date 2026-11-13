@@ -21,8 +21,11 @@ header nav{max-width:1480px}
 .scroll-mouth,.scroll-end{position:relative;margin-inline:-7px;border:1px solid #a98756;border-radius:8px;background:linear-gradient(#cfaf7a,#f7e8c5 28%,#e2c796 63%,#b58d59);height:22px;box-shadow:0 4px 8px #49351e30}
 .scroll-mouth{z-index:2;margin-bottom:-11px;transform:translateY(0);transition:transform .76s var(--ease-out),opacity .76s}
 .unrolled .scroll-mouth{transform:translateY(-9px) scaleY(.5);opacity:.52}
-.scroll-pages{display:grid;grid-template-rows:0fr;transition:grid-template-rows .76s var(--ease-out)}
-.unrolled .scroll-pages{grid-template-rows:1fr}
+.scroll-pages{display:grid;grid-template-rows:1fr}
+.volume-ready .scroll-pages{transition:grid-template-rows .76s var(--ease-out)}
+.volume-ready:not(.unrolled) .scroll-pages{grid-template-rows:0fr}
+.scroll-cover .magnetic{display:none}
+.volume-ready .scroll-cover .magnetic{display:inline-block}
 .scroll-ink{min-height:0;min-width:0;overflow:hidden;padding-inline:clamp(12px,3vw,42px)}
 .scroll-ink>.feature{padding-top:56px;padding-bottom:40px}
 .scroll-ink>.feature+.feature{border-top:1px solid #c8aa7c75}
@@ -57,4 +60,4 @@ header nav{max-width:1480px}
   .reading-layout .map-wrap{min-height:290px}
   .pedigree>ul{margin-inline:0}
 }
-@media(prefers-reduced-motion:reduce){.scroll-pages,.scroll-mouth{transition:none}}
+@media(prefers-reduced-motion:reduce){.volume-ready .scroll-pages,.scroll-mouth{transition:none}}

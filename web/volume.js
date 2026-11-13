@@ -1,6 +1,5 @@
-import {reducedMotion} from './motion.js';
-
-export function setupVolume() {
+(() => {
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const volume = document.querySelector('.scroll-volume');
   const pages = document.querySelector('#scroll-pages');
   const opener = document.querySelector('.scroll-cover button');
@@ -10,7 +9,15 @@ export function setupVolume() {
   let open = false;
   let pendingScroll = 0;
   let frame = 0;
-  pages.inert = true;
+  function recordLocation(hash, replace = false) {
+    if (location.hash === hash) return;
+    try {
+      if (replace) history.replaceState(null,'',hash);
+      else history.pushState(null,'',hash);
+    } catch {
+      // Embedded previews may restrict history updates. Reading still works.
+    }
+  }
 
   function updateReadingPosition() {
     frame = 0;
@@ -44,7 +51,7 @@ export function setupVolume() {
     const wasOpen = open;
     if (section.id !== 'cover') setOpen(true);
     const scroll = () => {
-      section.scrollIntoView({behavior:reducedMotion.matches ? 'instant' : 'smooth'});
+      section.scrollIntoView({block:'start',behavior:reducedMotion.matches ? 'instant' : 'smooth'});
       if (focus) section.querySelector('h2')?.focus({preventScroll:true});
     };
     if (wasOpen || reducedMotion.matches || section.id === 'cover') scroll();
@@ -53,20 +60,20 @@ export function setupVolume() {
   opener.addEventListener('click',() => {
     if (open) {
       clearTimeout(pendingScroll);
-      history.replaceState(null,'','#cover');
       setOpen(false);
       goTo(sections[0]);
+      recordLocation('#cover',true);
     } else {
-      history.replaceState(null,'','#lineage');
       goTo(sections[1],true);
+      recordLocation('#lineage',true);
     }
   });
   for (const [index,link] of links.entries()) {
     link.addEventListener('click',event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
-      if (location.hash !== link.hash) history.pushState(null,'',link.hash);
       goTo(sections[index],true);
+      recordLocation(link.hash);
     });
   }
   const fromHash = () => {
@@ -77,6 +84,8 @@ export function setupVolume() {
   addEventListener('hashchange',fromHash);
   addEventListener('scroll',schedule,{passive:true});
   addEventListener('resize',schedule);
+  setOpen(false);
+  volume.classList.add('volume-ready');
   fromHash();
   schedule();
-}
+})();

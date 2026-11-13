@@ -1,4 +1,3 @@
-import {setupVolume} from './volume.js';
 import {setupMotion, enterDetail, reducedMotion} from './motion.js';
 import {drawGlobe} from './globe.js';
 import {peopleSeed, sourceSeed, memorySeed} from './demo.js';
@@ -307,7 +306,6 @@ document.querySelectorAll('[data-view]').forEach(button => button.onclick = () =
 $('#search').addEventListener('input',() => renderPeople());
 new ResizeObserver(drawMap).observe(canvas);
 renderPedigree();
-setupVolume();
 setupMotion();
 setView(view);
 selectPlace(0);
