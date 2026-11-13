@@ -22,7 +22,22 @@ let flightFrame = 0;
 let flying = false;
 let activePlace = 0;
 let land;
-const people = peopleSeed;
+const workspaceKey = 'jiaxu-web-workspace-v1';
+let people = peopleSeed;
+let memories = memorySeed;
+let sources = sourceSeed;
+
+function readWorkspace() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(workspaceKey));
+    people = Array.isArray(saved?.people) && saved.people.length ? saved.people : peopleSeed;
+    memories = Array.isArray(saved?.memories) ? saved.memories : memorySeed;
+    sources = Array.isArray(saved?.sources) ? saved.sources : sourceSeed;
+  } catch {
+    // Keep the reading copy available when browser storage is unavailable.
+  }
+}
+readWorkspace();
 let personTab = 'bio';
 let personId = people.some(p => p.id === 'p3') ? 'p3' : people[0]?.id;
 const canvas = $('#map');
@@ -224,7 +239,7 @@ function renderPersonDetail(person, animate = false) {
     detail.append(relations.childElementCount ? relations : make('p','暂无关联亲属。'));
   }
   if (personTab === 'sources' || personTab === 'memories') {
-    const items = (personTab === 'sources' ? sourceSeed : memorySeed).filter(item => item.person===person.id);
+    const items = (personTab === 'sources' ? sources : memories).filter(item => item.person===person.id);
     for (const item of items) {
       const row = make('article',null,'person-material');
       row.append(make('strong',item.title),make('p',item.year+' · '+item.desc,'meta'));
@@ -245,20 +260,25 @@ function renderPersonDetail(person, animate = false) {
 }
 
 function renderRecords() {
+  const options = [...new Map([...sourceSeed,...sources].map(source => [source.id,source])).values()];
   const cards = sourceSeed.slice(0,2).map((initial,index) => {
     const card = make('article',null,'record');
     const select = make('select');
     select.id = index===0 ? 'record-a' : 'record-b';
     select.setAttribute('aria-label',index===0 ? '左侧史料' : '右侧史料');
-    for (const s of sourceSeed) select.add(new Option(s.title,s.id));
+    for (const s of options) select.add(new Option(s.title,s.id));
     select.value = initial.id;
     const body = make('div');
     select.onchange = () => {
-      const s = sourceSeed.find(record => record.id===select.value);
+      const s = options.find(record => record.id===select.value);
       const image = make('img');
-      image.src = './'+s.image.split('/').at(-1);
       image.alt = s.type+'演示插图';
-      body.replaceChildren(image,make('h3',s.title),make('p',s.year+' · '+s.desc,'meta'),make('blockquote',s.quote));
+      body.replaceChildren(make('h3',s.title),make('p',[s.year,s.desc].filter(Boolean).join(' · '),'meta'),make('blockquote',s.quote));
+      const asset = s.image?.match(/^assets\/([\w-]+\.svg)$/);
+      if (asset) {
+        image.src = './workspace/assets/'+asset[1];
+        body.prepend(image);
+      }
       enterDetail(body);
     };
     select.onchange();
@@ -311,6 +331,14 @@ setView(view);
 selectPlace(0);
 renderPeople();
 renderRecords();
+addEventListener('storage',event => {
+  if (event.key !== workspaceKey) return;
+  readWorkspace();
+  if (!people.some(person => person.id===personId)) personId = people[0]?.id;
+  renderPedigree();
+  renderPeople();
+  renderRecords();
+});
 fetch('./land.json').then(response => {
   if (!response.ok) throw new Error('底图加载失败');
   return response.json();

@@ -1,0 +1,14 @@
+.web-workspace{display:flex;flex-direction:column;border-radius:0;background:#f8f7ee}
+.web-workspace .mobile-app{flex:1;min-height:0;height:auto}
+.web-workspace .mobile-app #main{scrollbar-width:thin}
+.web-workspace #mobile-nav{display:none}
+.workspace-nav{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 18px;border-bottom:1px solid #d6dfce;background:#edf2e8}
+.workspace-nav a{color:#315421;text-decoration:none;padding:4px 0;font-size:13px;font-weight:600}
+.workspace-nav a:hover{text-decoration:underline}
+.web-workspace .modal-overlay{align-items:center;padding:16px}
+.web-workspace .modal{width:min(100%,680px);border-radius:16px}
+.web-workspace .modal.wide{width:min(100%,880px)}
+.web-workspace .person-drawer{max-width:520px;margin-inline:auto}
+.web-workspace .x-tree-viewport{height:clamp(300px,53vh,620px)}
+.web-workspace .m-page{width:100%;margin:auto}
+@media(min-width:680px){.web-workspace .memory-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.web-workspace .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -61,3 +61,6 @@ header nav{max-width:1480px}
   .pedigree>ul{margin-inline:0}
 }
 @media(prefers-reduced-motion:reduce){.volume-ready .scroll-pages,.scroll-mouth{transition:none}}
+
+.lineage-tools{text-align:center;margin:0 0 12px}
+.workspace-frame{display:block;width:100%;height:clamp(580px,80dvh,960px);border:1px solid #c9b48b;border-radius:16px;background:#f8f7ee}

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>家续 · 林氏家谱</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css?v=motion1">
-<link rel="stylesheet" href="scroll.css?v=scroll2">
-<script type="module" src="web.js?v=scroll2"></script>
+<link rel="stylesheet" href="scroll.css?v=parity1">
+<script type="module" src="web.js?v=parity1"></script>
 </head>
 <body>
 <header><nav><a class="brand" href="#"><img src="mark.svg" alt="">家续</a><a href="#cover">族谱阅读</a></nav></header>
@@ -12,7 +12,7 @@
 <aside class="contents">
 <div class="contents-inner"><p class="eyebrow">林氏家谱</p><h2>卷内目录</h2>
 <nav aria-label="卷内目录">
-<a href="#cover">卷首</a><a href="#lineage">世系</a><a href="#journey">迁徙</a><a href="#people">人物</a><a href="#records">史料</a>
+<a href="#cover">卷首</a><a href="#lineage">世系</a><a href="#journey">迁徙</a><a href="#people">人物</a><a href="#records">史料</a><a href="#workspace">修谱</a>
 </nav>
 <div class="reading-progress" aria-hidden="true"><span></span></div></div>
 </aside>
@@ -28,6 +28,7 @@
 <section class="feature lineage" id="lineage" aria-labelledby="lineage-title">
 <div class="intro"><p class="eyebrow">世系</p><h2 id="lineage-title" tabindex="-1">林氏世系图</h2><p>点选人物，翻到对应的家人小传。</p></div>
 <div class="pedigree" id="pedigree"></div>
+<p class="lineage-tools"><a class="detail-link" href="#workspace">查看房支、扇形图和后代图 ↓</a></p>
 </section>
 <section class="feature journey" id="journey" aria-labelledby="journey-title">
 <div class="intro"><p class="eyebrow">迁徙</p><h2 id="journey-title" tabindex="-1">由南安，渡向山海</h2><p>打开地图，沿着家书与口述查阅三处地点。</p></div>
@@ -43,7 +44,11 @@
 <section class="feature" id="people"><div class="intro"><p class="eyebrow">家族总览</p><h2 tabindex="-1">家人小传</h2><p>按姓名或出生地查找人物，再查看亲属关系与资料。</p></div>
 <div class="people-panel"><div class="directory"><label for="search">查找家人</label><input id="search" type="search" placeholder="输入姓名或地名"><div id="people-list"></div></div><article id="person-detail" aria-live="polite"></article></div></section>
 <section class="feature records" id="records"><div class="intro"><p class="eyebrow">史料对照</p><h2 tabindex="-1">谱页与家书</h2><p>对照两份资料，分清已有记载和待核线索。</p></div><div class="record-grid" id="record-grid"></div></section>
+<section class="feature" id="workspace">
+<div class="intro"><p class="eyebrow">修谱</p><h2 tabindex="-1">修谱工作台</h2><p>切换房支、编辑家人、核对史料与重复档案。工作台内的改动保存在当前浏览器。</p></div>
+<iframe class="workspace-frame" title="家续修谱工作台" src="workspace/?v=parity1#tree" loading="lazy"></iframe>
+</section>
 </div></div><div class="scroll-end" aria-hidden="true"></div></div>
 </main><footer>家续 · 虚构演示家族</footer>
-<script src="volume.js?v=scroll2"></script>
+<script src="volume.js?v=parity1"></script>
 </body></html>
