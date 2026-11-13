@@ -40,8 +40,58 @@ html,body.mobile-prototype{height:100%;margin:0;overflow:hidden;background:#e9ed
 @media(max-width:520px){html,body.mobile-prototype,.preview-stage,.phone,.phone.android{background:#f1f3f4}.x-tree-viewport,.phone .x-tree-viewport{height:calc(100dvh - 376px);max-height:none;min-height:260px}.x-tree-tip{font-size:9px}.x-app-bar{min-height:65px}}
 @media(max-width:360px){.x-tree-options{gap:5px}.x-tree-options button{font-size:10px}.x-profile-tabs{gap:17px}.x-summary-buttons{padding-left:14px;padding-right:14px}}
 .m-review-image{height:135px;margin-bottom:12px}.m-review-fields .field{margin-bottom:12px}.x-tree-tip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:8px;padding-right:8px}
-</style><style>.web-atlas-link{position:fixed;top:8px;right:12px;z-index:50;background:#f6f7f2;color:#426b2e;border:1px solid #dde4d6;border-radius:20px;padding:6px 12px;font:600 12px system-ui;text-decoration:none}@media(max-width:640px){.web-atlas-link{top:auto;bottom:84px;right:8px}}</style></head>
-<body class="mobile-prototype"><a class="web-atlas-link" href="./web/">Web 家族地图 ↗</a><div class="preview-stage"><aside class="review-panel"><div class="review-brand"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA1MiI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjA4NTNlIiBzdHJva2Utd2lkdGg9IjIuMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjQgNDVWMjFNMjQgMzRMMTEgMjFNMjQgMjdMMzYgMTVNMjQgMjFMMTggMTIiLz48cmVjdCB4PSI3IiB5PSIxMiIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiByeD0iMiIgZmlsbD0iI2UxZWJjYyIvPjxyZWN0IHg9IjMxIiB5PSI1IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIHJ4PSIyIiBmaWxsPSIjYmFjZjhjIi8+PHJlY3QgeD0iMTQiIHk9IjMiIHdpZHRoPSI5IiBoZWlnaHQ9IjkiIHJ4PSIyIiBmaWxsPSIjZWRmMmU0Ii8+PHBhdGggZD0iTTEzIDQ1aDIyIi8+PHBhdGggZD0iTTI0IDM5YzUtMiA5LTIgMTQtMSIgc3Ryb2tlPSIjOWJiNTY1Ii8+PC9nPjwvc3ZnPgo=" alt=""><span>家续<small>JIAXU · FAMILY MEMORIES</small></span></div><div class="review-eyebrow">MOBILE APP PROTOTYPE</div><h1>从一个人物，<br>接续一部家谱。</h1><p>面向 iOS 与 Android 的手机应用体验。<br>核对关系与来源，留下家庭记忆。</p><div class="platform-switch" aria-label="应用平台预览"><button class="active" data-action="mobile-platform" data-platform="ios" aria-pressed="true">iOS</button><button data-action="mobile-platform" data-platform="android" aria-pressed="false">Android</button></div><div class="review-links"><a href="#home">01 <span>发现与中国族谱</span></a><a href="#tree">02 <span>竖屏家族树与人物</span></a><a href="#memories">03 <span>家庭记忆与收藏</span></a><a href="#roots">04 <span>闽台寻根与谱本核对</span></a><a href="#tasks">05 <span>资料提示与重复人物核对</span></a><a href="#clan">06 <span>字辈、房支与中国族谱</span></a></div><p class="review-note">交互演示 · 全部资料均为虚构样例<br>编辑保存在当前浏览器，AI使用预置样例。</p></aside><div class="phone-area"><div class="phone-wrap"><div class="phone ios" id="device"><div class="phone-screen" id="phone-screen"><div class="status-bar"><span>9:41</span><div class="dynamic-island"></div><div class="system-icons"><svg viewBox="0 0 18 12" aria-hidden="true"><path d="M1 10h2V8H1zm4 0h2V6H5zm4 0h2V3H9zm4 0h2V0h-2z" fill="currentColor"/></svg><svg viewBox="0 0 18 13" aria-hidden="true"><path d="M1 4q8-7 16 0M4 7q5-4 10 0M7 10q2-2 4 0" stroke="currentColor" fill="none" stroke-width="1.8"/></svg><span class="battery"></span></div></div><div class="mobile-app"><main id="main" tabindex="-1"></main><nav id="mobile-nav" aria-label="应用底部导航"></nav><div class="home-indicator"></div></div><div id="drawer-root"></div><div id="modal-root"></div><div id="toast" class="toast" role="status" aria-live="polite"></div></div></div></div><div class="device-caption"><span id="platform-caption">iOS 应用交互预览</span><span>V3.0 · 核心流程</span></div></div></div><script>'use strict';
+</style><style>/* Shared iOS-inspired appearance for the phone and Web workspace. */
+:where(.phone.ios,.web-workspace) {
+  --app-green:#007aff;
+  --app-bg:#f2f2f7;
+  --app-ink:#1c1c1e;
+  --app-muted:#595960;
+  --ios-tint:#0065d1;
+  --ios-fill:#e9e9ef;
+  --ios-divider:#dcdce2;
+  --ios-paper:#fff;
+  color:var(--app-ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  accent-color:var(--app-green);
+}
+:is(.phone.ios .phone-screen,.web-workspace) { background:var(--app-bg);color:var(--app-ink) }
+:is(.phone.ios,.web-workspace) :is(.m-page,.x-tree-toolbar,.x-tree-status) {background:var(--app-bg)}
+:is(.phone.ios,.web-workspace) :is(.status-bar,.app-bar,#mobile-nav,.modal-header,.modal-footer) {
+  background:#f9f9fbe8;
+  border-color:var(--ios-divider);
+  backdrop-filter:blur(18px) saturate(160%);
+  color:var(--app-ink);
+}
+:is(.phone.ios,.web-workspace) .app-bar h1 {font-size:23px;letter-spacing:-.025em;font-weight:700;color:var(--app-ink)}
+:is(.phone.ios,.web-workspace) :is(.m-title small,.m-nav-link,.x-muted,.muted,.x-tree-tip,.x-fan-legend,.modal-description,.x-select-list small) {color:var(--app-muted)}
+:is(.phone.ios,.web-workspace) :is(.m-nav-link.active,.m-back,.m-icon-button,.text-link,.x-wide-link,.x-section-head button,.x-section-head a,.x-family-heading button,.x-family-heading a,.x-tree-options button,.x-zoom-controls button,.x-expand) {color:var(--ios-tint)}
+:is(.phone.ios,.web-workspace) :is(.m-back,.m-icon-button,.close-btn) {background:#e7effb;border:0;border-radius:50%;color:var(--ios-tint)}
+:is(.phone.ios,.web-workspace) :is(.btn-primary,.m-button.primary,.m-button-primary) {background:var(--ios-tint);color:white;border-color:transparent;border-radius:12px;font-weight:600}
+:is(.phone.ios,.web-workspace) :is(.x-section,.memory-card,.x-record-result,.x-clan-intro,.m-account-stats,.m-card,.x-task-card,.x-profile-card,.x-family-card,.m-memory-top) {
+  background:var(--ios-paper);color:var(--app-ink);border:1px solid #e6e6eb;border-radius:16px;box-shadow:none;
+}
+:is(.phone.ios,.web-workspace) :is(.m-setting-row,.x-select-list>button,.x-sheet-links>a,.x-sheet-links>button) {color:var(--app-ink);border-color:var(--ios-divider);min-height:44px}
+:is(.phone.ios,.web-workspace) :is(.m-segment,.x-fan-filters,.x-tree-options select) {background:var(--ios-fill);border-radius:10px;color:var(--app-ink);border:0}
+:is(.phone.ios,.web-workspace) .m-segment {padding:3px}
+:is(.phone.ios,.web-workspace) .m-segment button {min-height:36px;border-radius:8px;color:var(--app-muted)}
+:is(.phone.ios,.web-workspace) :is(.m-segment button.active,.x-fan-filters button.active) {background:white;color:var(--ios-tint);border-color:transparent;box-shadow:0 1px 3px #20202a20;font-weight:600}
+:is(.phone.ios,.web-workspace) :is(.x-tree-viewport,.x-fan) {background:#edf2f9;border-color:var(--ios-divider)}
+:is(.phone.ios,.web-workspace) .x-tree-node {border:1px solid #b8cde8;border-radius:10px;box-shadow:0 2px 6px #152f4a16}
+:is(.phone.ios,.web-workspace) .x-tree-node.female {border-color:#d9c0ce}
+:is(.phone.ios,.web-workspace) .x-tree-node.centre {border:2px solid var(--ios-tint)}
+:is(.phone.ios,.web-workspace) :is(.avatar,.x-pill,.x-notice,.m-demo,.x-eyebrow) {color:var(--ios-tint)}
+:is(.phone.ios,.web-workspace) :is(.avatar,.x-pill,.x-notice,.m-demo) {background:#e8f1ff}
+:is(.phone.ios,.web-workspace) :is(.x-pill.amber,.avatar.female) {background:#f8e9f0;color:#874365}
+:is(.phone.ios,.web-workspace) :is(.modal,.person-drawer) {background:var(--app-bg);color:var(--app-ink);border-color:var(--ios-divider)}
+:is(.phone.ios,.web-workspace) :is(input:not([type=checkbox]):not([type=radio]),textarea) {background:var(--ios-paper);color:var(--app-ink);border:1px solid var(--ios-divider);border-radius:10px}
+:is(.phone.ios,.web-workspace) :is(a,button,input,textarea,select):focus-visible {outline:2px solid var(--ios-tint);outline-offset:2px}
+:is(.phone.ios,.web-workspace) :is(button,a):active {filter:brightness(.94)}
+:is(.phone.ios,.web-workspace) .x-tree-status button {background:var(--ios-tint);color:white;border-radius:9px}
+:is(.phone.ios,.web-workspace) .x-select-list {border-radius:12px;background:white}
+:is(.phone.ios,.web-workspace) .x-select-list>button {padding-inline:12px}
+:is(.phone.ios,.web-workspace) .x-select-list>button:last-of-type {border-bottom:0}
+</style><style>.web-atlas-link{position:fixed;top:8px;right:12px;z-index:50;background:#f9f9fb;color:#0065d1;border:1px solid #dcdce2;border-radius:20px;padding:6px 12px;font:600 12px system-ui;text-decoration:none}@media(max-width:640px){.web-atlas-link{top:auto;bottom:84px;right:8px}}</style></head>
+<body class="mobile-prototype"><a class="web-atlas-link" href="./web/">Web 族谱 ↗</a><div class="preview-stage"><aside class="review-panel"><div class="review-brand"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA1MiI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjA4NTNlIiBzdHJva2Utd2lkdGg9IjIuMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjQgNDVWMjFNMjQgMzRMMTEgMjFNMjQgMjdMMzYgMTVNMjQgMjFMMTggMTIiLz48cmVjdCB4PSI3IiB5PSIxMiIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiByeD0iMiIgZmlsbD0iI2UxZWJjYyIvPjxyZWN0IHg9IjMxIiB5PSI1IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIHJ4PSIyIiBmaWxsPSIjYmFjZjhjIi8+PHJlY3QgeD0iMTQiIHk9IjMiIHdpZHRoPSI5IiBoZWlnaHQ9IjkiIHJ4PSIyIiBmaWxsPSIjZWRmMmU0Ii8+PHBhdGggZD0iTTEzIDQ1aDIyIi8+PHBhdGggZD0iTTI0IDM5YzUtMiA5LTIgMTQtMSIgc3Ryb2tlPSIjOWJiNTY1Ii8+PC9nPjwvc3ZnPgo=" alt=""><span>家续<small>JIAXU · FAMILY MEMORIES</small></span></div><div class="review-eyebrow">MOBILE APP PROTOTYPE</div><h1>从一个人物，<br>接续一部家谱。</h1><p>面向 iOS 与 Android 的手机应用体验。<br>核对关系与来源，留下家庭记忆。</p><div class="platform-switch" aria-label="应用平台预览"><button class="active" data-action="mobile-platform" data-platform="ios" aria-pressed="true">iOS</button><button data-action="mobile-platform" data-platform="android" aria-pressed="false">Android</button></div><div class="review-links"><a href="#home">01 <span>发现与中国族谱</span></a><a href="#tree">02 <span>竖屏家族树与人物</span></a><a href="#memories">03 <span>家庭记忆与收藏</span></a><a href="#roots">04 <span>闽台寻根与谱本核对</span></a><a href="#tasks">05 <span>资料提示与重复人物核对</span></a><a href="#clan">06 <span>字辈、房支与中国族谱</span></a></div><p class="review-note">交互演示 · 全部资料均为虚构样例<br>编辑保存在当前浏览器，AI使用预置样例。</p></aside><div class="phone-area"><div class="phone-wrap"><div class="phone ios" id="device"><div class="phone-screen" id="phone-screen"><div class="status-bar"><span>9:41</span><div class="dynamic-island"></div><div class="system-icons"><svg viewBox="0 0 18 12" aria-hidden="true"><path d="M1 10h2V8H1zm4 0h2V6H5zm4 0h2V3H9zm4 0h2V0h-2z" fill="currentColor"/></svg><svg viewBox="0 0 18 13" aria-hidden="true"><path d="M1 4q8-7 16 0M4 7q5-4 10 0M7 10q2-2 4 0" stroke="currentColor" fill="none" stroke-width="1.8"/></svg><span class="battery"></span></div></div><div class="mobile-app"><main id="main" tabindex="-1"></main><nav id="mobile-nav" aria-label="应用底部导航"></nav><div class="home-indicator"></div></div><div id="drawer-root"></div><div id="modal-root"></div><div id="toast" class="toast" role="status" aria-live="polite"></div></div></div></div><div class="device-caption"><span id="platform-caption">iOS 应用交互预览</span><span>V3.0 · 核心流程</span></div></div></div><script>'use strict';
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -387,3 +437,4 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-action]')
 
 router();
 </script></body></html>
+

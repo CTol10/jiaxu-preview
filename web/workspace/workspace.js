@@ -343,4 +343,13 @@ document.addEventListener('submit',e=>{const f=e.target;if(!f.id.startsWith('x-'
 document.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;if(el.dataset.action==='add-person'){e.preventDefault();e.stopImmediatePropagation();relationStart(state.route==='person'?state.person:state.treeFocus||'p0','child')}if(el.dataset.action==='reset-demo'){e.preventDefault();e.stopImmediatePropagation();data={people:structuredClone(peopleSeed),memories:structuredClone(memorySeed),sources:structuredClone(sourceSeed),favorites:[],followed:[],activities:[],notes:[],ocrDone:false,linked:false};initCore();state.ocrStage=1;state.chat=[];state.interviewStep=0;state.treeFocus='p0';state.generations=3;state.zoom=1;state.treeView='portrait';closeModal();go('tree');toast('已恢复V3虚构演示资料')}} ,true);
 
 function fitDevice() {}
-router();
+function updateWorkspaceNavigation() {
+    const active = location.hash.split('/')[0] || '#tree';
+    document.querySelectorAll('.workspace-nav a').forEach(link => {
+      if (link.hash === active || (active === '#person' && link.hash === '#tree')) link.setAttribute('aria-current','page');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  addEventListener('hashchange', updateWorkspaceNavigation);
+  router();
+  updateWorkspaceNavigation();

@@ -12,3 +12,14 @@
 .web-workspace .x-tree-viewport{height:clamp(300px,53vh,620px)}
 .web-workspace .m-page{width:100%;margin:auto}
 @media(min-width:680px){.web-workspace .memory-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.web-workspace .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* A wide workspace toolbar and content layout using the same iOS tokens. */
+.web-workspace .workspace-nav {background:#f9f9fbe8;border-color:var(--ios-divider);gap:4px 8px;padding:10px 16px}
+.web-workspace .workspace-nav a {padding:8px 10px;border-radius:9px;color:var(--ios-tint)}
+.web-workspace .workspace-nav a[aria-current=page] {background:#e4efff;font-weight:700}
+.web-workspace .workspace-nav a:hover {background:var(--ios-fill);text-decoration:none}
+.web-workspace .mobile-app #main {background:var(--app-bg)}
+.web-workspace .m-page:not(.x-tree-page) {max-width:1080px}
+.web-workspace .modal,.web-workspace .modal.wide {border-radius:20px}
+.web-workspace .modal::before {display:none}
+.web-workspace .modal-header h2 {font-size:20px;font-weight:700}
