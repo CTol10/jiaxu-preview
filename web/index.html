@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>家续 · 家族地图</title><link rel="icon" href="mark.svg"><link rel="stylesheet" href="web.css">
+<script type="module" src="web.js"></script>
+</head>
+<body>
+<header><nav><a class="brand" href="#"><img src="mark.svg" alt="">家续</a><a href="#atlas">家族地图</a><a href="#people">人物总览</a><a href="#records">史料对照</a><a class="mobile-link" href="../">移动端 ↗</a></nav></header>
+<main>
+<section class="hero"><p class="eyebrow">家续 · Web 原型</p><h1>一张地图，<br>看见家族的来路。</h1><p>从泉州南安到台南，沿着旧谱、家书和口述，追溯一家人的山海足迹。</p><a class="primary" href="#atlas">探索家族地图 ↓</a></section>
+<section class="atlas" id="atlas" aria-label="家族迁徙地图">
+<div class="map-wrap">
+<canvas id="map" aria-label="家族地点分布示意"></canvas><div id="markers"></div>
+<div class="map-tools" role="group" aria-label="地图视野"><button data-view="world">世界</button><button data-view="region">东亚</button><button data-view="local">闽台</button></div>
+<p class="map-credit">Natural Earth 底图 · 迁徙线索示意</p>
+</div>
+<aside class="map-detail"><p class="eyebrow">林文海的迁徙线索</p><div id="places" role="group" aria-label="地点"></div><div id="place-detail" aria-live="polite"></div></aside>
+</section>
+<section class="feature" id="people"><div class="intro"><p class="eyebrow">家族总览</p><h2>地名背后，是家人。</h2><p>按姓名或出生地查找人物，再查看亲属关系与资料。</p></div>
+<div class="people-panel"><div class="directory"><label for="search">查找家人</label><input id="search" type="search" placeholder="输入姓名或地名"><div id="people-list"></div></div><article id="person-detail" aria-live="polite"></article></div></section>
+<section class="feature records" id="records"><div class="intro"><p class="eyebrow">史料对照</p><h2>把原始记载摆在一起。</h2><p>对照两份资料，分清已有记载和待核线索。</p></div><div class="record-grid" id="record-grid"></div></section>
+</main><footer>家续 · 虚构演示家族　<a href="../">打开移动端原型 ↗</a></footer>
+</body></html>
