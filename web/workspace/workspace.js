@@ -345,7 +345,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-action]')
 const renderCore = render;
 const profileCore = profileView;
 let archivePerson = 'p3';
-let archivePanelOpen = true;
+let archivePanelOpen = innerWidth >= 1200;
 let archivePage = 0;
 let archiveVertical = false;
 let archiveMotion = !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -395,7 +395,9 @@ function archiveChronicle() {
 profileView = function () {
   const p = byId(state.person) || byId('p3');
   const photo = p.id === 'p3' ? '<figure class="archive-portrait"><img src="assets/family-archive.webp" alt="虚构林氏合影中的林文海"><figcaption>家庭合影局部 · 虚构档案</figcaption></figure>' : '';
-  return profileCore().replace('<div class="x-profile-shortcuts">', `<section class="archive-bio">${photo}<div><h2>人物小传</h2><p>${esc(p.bio || '这位家人的生平仍待补录。')}</p></div></section><div class="x-profile-shortcuts">`);
+  const profile = profileCore().replace('<div class="x-profile-shortcuts">', `<section class="archive-bio">${photo}<div><h2>人物小传</h2><p>${esc(p.bio || '这位家人的生平仍待补录。')}</p></div></section><div class="x-profile-shortcuts">`);
+  if (state.tab !== 'timeline') return profile;
+  return profile.replace('<div class="x-profile-body">', `<div class="x-profile-body"><section class="x-section"><div class="x-section-head"><h2>人物事件</h2><button data-archive-event="" data-person="${p.id}">添加事件</button></div>${archiveEventsView(p)}</section>`);
 };
 
 function showArchivePerson() {
@@ -408,9 +410,19 @@ function showArchivePerson() {
   if (!onTree || !p || panel.hidden) return;
   const family = [[byId(parents(p.id).father),'父亲'],[byId(parents(p.id).mother),'母亲'],...partners(p.id).map(u=>[byId(u.partners.find(id=>id!==p.id)),'配偶']),...children(p.id).map(c=>[c,'子女'])].filter(([person])=>person);
   panel.innerHTML = `<div class="archive-context-head"><span>人物小传</span><button data-book="context" aria-label="收起人物小传">×</button></div>
-    ${avatar(p)}<h2>${esc(p.name)}</h2><p class="archive-kicker">${lifespan(p)} · ${esc(p.origin || p.place || '籍贯待考')}</p>
-    <p>${esc(p.bio || '生平资料待补录。')}</p><h3>家庭关系</h3><ul>${family.map(([q,label])=>`<li><button data-archive-person="${q.id}">${label} · ${esc(q.name)}</button></li>`).join('')}</ul>
-    <a class="archive-link" href="#person/${p.id}/details">查看完整档案 →</a><p><a class="archive-primary" href="#person/${p.id}/family">编辑家庭关系</a></p>`;
+    <div class="archive-person-heading">${archivePortrait(p)}<div><h2>${esc(p.name)}</h2><p class="archive-kicker">${lifespan(p)} · ${esc(branchName(p.id))}</p></div></div>
+    <p>${esc(p.bio || '生平资料待补录。')}</p>
+    <section class="archive-person-section"><h3>操作</h3><div class="archive-person-actions">
+      <button data-archive-event="" data-person="${p.id}">添加事件</button>
+      ${button('编辑信息','edit-person','',`data-id="${p.id}"`)}
+      <a href="#person/${p.id}/family">编辑亲属关系</a>
+      <a href="#person/${p.id}/details">查看完整档案</a>
+    </div></section>
+    <section class="archive-person-section"><h3>基本信息</h3><dl class="archive-facts">${[
+      ['姓名',p.name],['性别',p.sex==='F'?'女':'男'],['出生',p.birth],['出生地',p.place],['祖籍',p.origin],['状态',p.death?'已故 · '+p.death:'在世 · 受限可见']
+    ].map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value || '待补')}</dd></div>`).join('')}</dl></section>
+    <section class="archive-person-section"><h3>事件 <small>${personEventList(p).length}</small></h3>${archiveEventsView(p)}</section>
+    <section class="archive-person-section"><h3>家庭关系</h3><ul>${family.map(([q,label])=>`<li><button data-archive-person="${q.id}">${label} · ${esc(q.name)}</button></li>`).join('')}</ul></section>`;
   $$('.x-tree-lines path').forEach(line => {
     line.classList.toggle('archive-path', (line.dataset.child === p.id && !!line.dataset.parent) || (line.dataset.parent === p.id && !!line.dataset.child));
   });
@@ -422,13 +434,20 @@ function showArchivePerson() {
 }
 
 render = function () {
-  const view = {home:archiveHome,book:archiveBook,directory:archiveDirectory,chronicle:archiveChronicle}[state.route];
+  const view = {home:archiveHome,book:archiveBook,directory:archiveDirectory,chronicle:archiveChronicle,map:archiveMapView}[state.route];
   if (view) {
     $('#main').innerHTML = view();
     fillIcons();
   } else {
     renderCore();
     if(state.route==='tree') {
+      $$('.x-node-hit').forEach(node => {
+        const person = byId(node.dataset.id);
+        if (!person) return;
+        const portrait=node.querySelector('.avatar');
+        if(portrait) portrait.outerHTML=archivePortrait(person);
+        node.title = [person.name, lifespan(person), person.place, branchName(person.id)].filter(Boolean).join(' · ');
+      });
       $('.x-app-bar h1').textContent = '世系图谱';
       $('.m-head-actions').insertAdjacentHTML('afterbegin','<button class="archive-tool" data-book="full">全屏</button><button class="archive-tool" data-book="context">人物小传</button>');
     }
@@ -439,7 +458,7 @@ render = function () {
 document.addEventListener('click', async event => {
   const target = event.target.closest('[data-book],[data-archive-person],[data-action="person-drawer"]');
   if (!target) return;
-  const id = target.dataset.archivePerson || (state.route === 'tree' && innerWidth >= 1200 ? target.dataset.id : '');
+  const id = target.dataset.archivePerson || (state.route === 'tree' ? target.dataset.id : '');
   if (id && byId(id) && (target.dataset.archivePerson || target.dataset.action === 'person-drawer') && !(state.dragBlock > Date.now())) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -473,6 +492,165 @@ document.addEventListener('change', event => {
   archivePage=Number(event.target.value);
   render();
   $('#archive-chapter').focus();
+});
+
+const archivePlaces = {
+  nanan:['福建南安',118.39,24.96,'南安'],
+  xiamen:['福建厦门',118.09,24.48,'厦门'],
+  zhangzhou:['福建漳州',117.65,24.51,'漳州'],
+  kinmen:['金门',118.32,24.43,'金门'],
+  tainan:['台南',120.20,22.99,'台南'],
+  chiayi:['嘉义',120.45,23.48,'嘉义'],
+  singapore:['新加坡',103.82,1.35,'新加坡'],
+  vancouver:['温哥华',-123.12,49.28,'温哥华'],
+  sydney:['悉尼',151.21,-33.87,'悉尼']
+};
+
+const sampleEvents = {
+  p3:[
+    {id:'kinmen',title:'金门迁居线索',date:'约1948',place:'金门',note:'家人口述 · 年份和行程待核'},
+    {id:'letter',title:'台南家书',date:'1962',place:'台南',note:'家书通信地点'}
+  ]
+};
+const portraitPositions = {
+  p0:'28% 21%',p1:'77% 44%',p2:'20% 47%',p3:'53% 48%',
+  p4:'39% 53%',p5:'81% 25%',p6:'68% 28%',p16:'28% 69%'
+};
+let archiveLand;
+let archiveLandFailed = false;
+let mapMode = 'china';
+let mapPlace = '';
+
+function archivePortrait(person) {
+  const position = portraitPositions[person.id];
+  return position
+    ? `<span class="archive-node-photo" style="background-position:${position}" aria-hidden="true"></span>`
+    : avatar(person);
+}
+
+function personEvents(person) {
+  return data.archiveEvents?.[person.id] ?? sampleEvents[person.id] ?? [];
+}
+
+function placeKey(value) {
+  return Object.keys(archivePlaces).find(key => (value || '').includes(archivePlaces[key][3]));
+}
+
+function personEventList(person) {
+  const fixed = [
+    person.birth && {title:'出生',date:String(person.birth),place:person.place},
+    person.death && {title:'逝世',date:String(person.death)}
+  ].filter(Boolean);
+  return [...fixed,...personEvents(person)].sort((a,b) => (Number(a.date.match(/\d{4}/)?.[0]) || Infinity) - (Number(b.date.match(/\d{4}/)?.[0]) || Infinity));
+}
+
+function archiveEventsView(person) {
+  const events = personEventList(person);
+  return `<ol class="archive-events">${events.map(event => {
+    const key = placeKey(event.place);
+    return `<li><div><strong>${esc(event.title)}</strong><small>${esc(event.date || '日期待考')}${event.place ? ' · '+esc(event.place) : ''}</small>${event.note ? `<small>${esc(event.note)}</small>` : ''}</div>
+      ${key ? `<a href="#map/${key}" aria-label="在地图查看${esc(event.place)}">地图</a>` : ''}
+      ${event.id ? `<button data-archive-event="${esc(event.id)}" data-person="${person.id}" aria-label="编辑${esc(event.title)}">编辑</button>` : ''}</li>`;
+  }).join('')}</ol>`;
+}
+
+function openArchiveEvent(person, id) {
+  const event = personEvents(person).find(item => item.id === id);
+  modal(event ? '编辑事件' : '添加事件', `<form id="archive-event-form" data-person="${person.id}" data-event="${esc(event?.id || '')}">
+    <div class="field"><label for="archive-event-title">事件 *</label><input id="archive-event-title" name="title" required maxlength="60" value="${esc(event?.title || '')}" placeholder="例如：迁居"></div>
+    <div class="field"><label for="archive-event-date">日期</label><input id="archive-event-date" name="date" maxlength="30" value="${esc(event?.date || '')}" placeholder="例如：1962 年或约 1962 年"></div>
+    <div class="field"><label for="archive-event-place">地点</label><input id="archive-event-place" name="place" list="archive-places" maxlength="80" value="${esc(event?.place || '')}"><datalist id="archive-places">${Object.values(archivePlaces).map(([name])=>`<option value="${name}"></option>`).join('')}</datalist></div>
+    <div class="field"><label for="archive-event-note">备注或出处</label><textarea id="archive-event-note" name="note" maxlength="300">${esc(event?.note || '')}</textarea></div>
+    <button class="btn btn-primary" type="submit">保存事件</button></form>`);
+}
+
+function archiveMapView() {
+  const linked = {};
+  for (const person of data.people) {
+    const entries = [['出生地',person.place],['祖籍',person.origin],...personEvents(person).map(event => [event.title,event.place])];
+    for (const [kind,value] of entries) {
+      const key = placeKey(value);
+      if (!key) continue;
+      const persons = linked[key] ??= new Map();
+      const labels = persons.get(person.id) ?? new Set();
+      labels.add(kind);
+      persons.set(person.id,labels);
+    }
+  }
+  const requested = location.hash.split('/')[1];
+  if (requested && requested !== mapPlace && Object.hasOwn(archivePlaces,requested)) {
+    mapPlace = requested;
+    if (mapMode==='regional' && !['nanan','xiamen','zhangzhou','kinmen','tainan','chiayi'].includes(requested)) mapMode='china';
+    if (archivePlaces[requested][1]<70 || archivePlaces[requested][1]>140 || archivePlaces[requested][2]<16 || archivePlaces[requested][2]>55) mapMode='world';
+  }
+  const bounds = {china:[70,-56,72,44],world:[-180,-83,360,154],regional:[116.5,-26,5.4,4.2]}[mapMode];
+  const [x,y,w,h] = bounds;
+  const visible = Object.entries(archivePlaces).filter(([, [,lon,lat]]) => lon>=x && lon<=x+w && -lat>=y && -lat<=y+h);
+  const selection = visible.find(([key])=>key===mapPlace) || visible.find(([key])=>linked[key]) || visible[0];
+  const [key,[name]] = selection;
+  const polygons = archiveLand?.features.flatMap(({geometry}) => geometry.type==='Polygon' ? [geometry.coordinates] : geometry.coordinates) ?? [];
+  const outline = polygons.map(polygon => polygon.map(ring => ring.map(([lon,lat],i)=>`${i?'L':'M'}${lon},${-lat}`).join('')+'Z').join('')).join('');
+  return `<article class="archive-page archive-map-page"><h1>家族地图</h1><p>从出生地、祖籍和家族事件查找相关人物。</p>
+    <div class="archive-tools"><button data-archive-map="world" aria-pressed="${mapMode==='world'}">世界地图</button><button data-archive-map="china" aria-pressed="${mapMode==='china'}">中国地图</button><button data-archive-map="regional" aria-pressed="${mapMode==='regional'}">闽台近览</button></div>
+    <svg class="archive-map" viewBox="${bounds.join(' ')}" role="group" aria-label="${{china:'中国',world:'世界',regional:'闽台'}[mapMode]}地点示意">
+    <path d="${outline}" fill-rule="evenodd"/>
+    ${visible.filter(([id])=>linked[id]).map(([id,[label,lon,lat]])=>`<g tabindex="0" role="button" data-map-pin="${id}" aria-label="${label}" aria-pressed="${id===key}"><circle cx="${lon}" cy="${-lat}" r="${w/155}"/></g>`).join('')}</svg>
+    <p class="archive-kicker">${archiveLandFailed?'底图暂不可用 · 可通过下方列表查看地点':'Natural Earth 底图 · 地点为城市级示意'}</p>
+    <div class="archive-tools archive-places">${visible.map(([id,[label]])=>`<button data-map-pin="${id}" aria-pressed="${id===key}">${label} · ${linked[id]?.size || 0} 人</button>`).join('')}</div>
+    <h2>${name}的相关人物</h2><ul class="archive-directory">${[...(linked[key] || [])].map(([id,kinds])=>`<li><a href="#person/${id}/details"><strong>${esc(byId(id).name)}</strong><span>${[...kinds].map(esc).join(' · ')}</span></a></li>`).join('')}</ul>
+    ${linked[key] ? '' : '<p>此地点暂无关联人物。可在人物小传中为事件填写此地点。</p>'}</article>`;
+}
+
+fetch('../land.json').then(response => {
+  if (!response.ok) throw Error('底图不可用');
+  return response.json();
+}).then(land => {archiveLand=land; if(state.route==='map') render();})
+  .catch(() => {archiveLandFailed=true; if(state.route==='map') render();});
+
+document.addEventListener('submit',event => {
+  const form = event.target;
+  if (form.id !== 'archive-event-form') return;
+  event.preventDefault();
+  const person = byId(form.dataset.person);
+  if (!person) return;
+  const fields = new FormData(form);
+  const title = fields.get('title').trim();
+  if (!title) { $('#archive-event-title').focus(); return; }
+  const id = form.dataset.event || uid('evt');
+  const entry = {id,title,date:fields.get('date').trim(),place:fields.get('place').trim(),note:fields.get('note').trim()};
+  const previous = data.archiveEvents;
+  data.archiveEvents = {...previous,[person.id]:[...personEvents(person).filter(item=>item.id!==id),entry]};
+  if (!save()) {data.archiveEvents=previous;return;}
+  closeModal();
+  render();
+  toast('事件已保存');
+});
+
+document.addEventListener('click',event => {
+  const item = event.target.closest('[data-archive-event],[data-archive-map],[data-map-pin]');
+  if (!item) return;
+  if (item.hasAttribute('data-archive-event')) {
+    const person = byId(item.dataset.person);
+    if (person) openArchiveEvent(person,item.dataset.archiveEvent);
+    return;
+  }
+  const mode = item.dataset.archiveMap;
+  if (mode) {
+    mapMode=mode;
+    if (location.hash !== '#map') location.hash='map';
+    else render();
+  } else {
+    mapPlace=item.dataset.mapPin;
+    if (location.hash !== '#map/'+mapPlace) location.hash='map/'+mapPlace;
+    else render();
+  }
+});
+
+document.addEventListener('keydown',event => {
+  const pin=event.target.closest('svg [data-map-pin]');
+  if (!pin || ![' ','Enter'].includes(event.key)) return;
+  event.preventDefault();
+  pin.dispatchEvent(new MouseEvent('click',{bubbles:true}));
 });
 
 function fitDevice() {}
