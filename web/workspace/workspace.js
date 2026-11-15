@@ -224,11 +224,11 @@ function relationPath(target){const queue=[{id:'p0',nodes:['p0'],edges:[]}],seen
 function showRelationship(id){const path=relationPath(id);modal('与我的关系',path?`<p class="modal-description">按当前已录入的家庭关系计算，包含关系类型。</p><div class="x-kin-path">${path.nodes.map((id,i)=>`${i?`<span class="x-path-edge">${icon('chevron-down')}${esc(path.edges[i-1])}</span>`:''}<a href="#person/${id}/details">${avatar(byId(id))}<span>${esc(byId(id).name)}<small>${pID(byId(id))}</small></span></a>`).join('')}</div>`:'<div class="x-notice">目前没有可验证的关系路径。先补充父母、配偶或子女关系，不能仅凭同姓接谱。</div>')}
 function coreFocus(id){if(!byId(id))return;state.treeFocus=id;state.zoom=1;state.treeRecent=[id,...state.treeRecent.filter(x=>x!==id)].slice(0,8);closeDrawer();go('tree')}
 function render(){initCore();const views={home:homeView,tree:treeView,person:profileView,memories:memoriesView,roots:rootsView,studio:studioView,me:mobileMeView,tasks:tasksView,search:searchView,clan:clanView};$('#main').innerHTML=(views[state.route]||homeView)();$('#mobile-nav').innerHTML=[['tree','tree','家族树'],['tasks','check','待办'],['memories','image','记忆'],['home','pin','发现'],['me','list','更多']].map(([r,i,t])=>`<a href="#${r}" class="m-nav-link ${state.route===r||(r==='tree'&&state.route==='person')||(r==='home'&&['roots','clan','studio'].includes(state.route))?'active':''}" ${state.route===r?'aria-current="page"':''}>${icon(i)}<span>${t}${r==='tasks'&&openTasks()?'<i class="x-nav-dot"></i>':''}</span></a>`).join('');fillIcons();fitDevice();if(state.route==='tree')bindCoreTree()}
-function router(){initCore();const path=location.hash.replace(/^#/,'')||'tree',parts=path.split('/');if(!mobileBack&&mobilePath&&path!==mobilePath)mobileHistory.push(mobilePath);mobileBack=false;mobilePath=path;state.route=parts[0];if(state.route==='person'){state.person=byId(parts[1])?parts[1]:'p3';state.tab=parts[2]||'details'}closeDrawer();closeModal();render();$('#main').scrollTop=0}
+function router(){initCore();const path=location.hash.replace(/^#/,'')||'home',parts=path.split('/');if(!mobileBack&&mobilePath&&path!==mobilePath)mobileHistory.push(mobilePath);mobileBack=false;mobilePath=path;state.route=parts[0];if(state.route==='person'){state.person=byId(parts[1])?parts[1]:'p3';state.tab=parts[2]||'details'}closeDrawer();closeModal();render();$('#main').scrollTop=0}
 function coreHeader(title,sub='',back=false,actions=''){return `<header class="app-bar x-app-bar">${back?button(icon('arrow-left'),'mobile-back','m-back','aria-label="返回上一页"'):''}<div class="m-title"><h1>${title}</h1>${sub?`<small>${sub}</small>`:''}</div><div class="m-head-actions">${actions||button(icon('search'),'search','m-icon-button','aria-label="搜索人物或资料"')}</div></header>`}
 function treeView(){const p=byId(state.treeFocus)||byId('p0'),g=parents(p.id);return `<div class="m-page x-tree-page">${coreHeader('家族树',esc(p.name)+' · '+pID(p),false,button(icon('history'),'x-tree-history','m-icon-button','aria-label="最近浏览人物"')+button(icon('search'),'search','m-icon-button','aria-label="搜索人物或资料"'))}<div class="x-tree-toolbar"><div class="m-segment">${[['portrait','tree','祖先图'],['fan','fan','扇形图'],['descendants','list','后代图']].map(([v,i,t])=>button(icon(i)+t,'tree-view',state.treeView===v?'active':'',`data-view="${v}" aria-pressed="${state.treeView===v}"`)).join('')}</div><div class="x-tree-options"><button data-action="x-tree-home">${icon('focus')}回到本人</button><select id="x-generations" aria-label="显示代数">${[3,4,5].map(n=>`<option value="${n}" ${state.generations===n?'selected':''}>${n}代</option>`).join('')}</select><button data-action="x-branches">${icon('branch')}房支</button>${groups(p.id).length>1?button(g.type+'父母 '+icon('chevron-down'),'x-parent-choice','',`data-id="${p.id}"`):''}</div></div>${state.treeView==='portrait'?corePortrait(p):state.treeView==='fan'?coreFan(p):coreDescendants(p)}<div class="x-tree-status"><span>${icon('lock')}在世人物受限可见</span><button data-action="x-rel-start" data-id="${p.id}" data-kind="child">${icon('plus')}添加家人</button></div></div>`}
 function treeLevels(root,n){const rows=[[{p:root}]];for(let depth=1;depth<n;depth++){const row=[];rows[depth-1].forEach(node=>{const g=node.p?parents(node.p.id):{};row.push({p:byId(g.father),child:node.p?.id,kind:'father',group:g.id},{p:byId(g.mother),child:node.p?.id,kind:'mother',group:g.id})});rows.push(row)}return rows}
-function corePortrait(root){const rows=treeLevels(root,state.generations),w=Math.max(356,2**(state.generations-1)*88),h=state.generations*137+40,card=76;let nodes='',lines='';rows.forEach((row,d)=>row.forEach((node,i)=>{const x=(i+.5)*w/row.length-card/2,y=(state.generations-1-d)*137+32;if(d<rows.length-1){for(let k=0;k<2;k++){const px=(i*2+k+.5)*w/(row.length*2),py=y-137+96;lines+=`<path d="M${x+card/2} ${y}V${y-20}H${px}V${py}"/>`}}if(node.p){const p=node.p,hasParents=groups(p.id).some(g=>g.father||g.mother);nodes+=`<div class="x-tree-node ${p.sex==='F'?'female':''} ${p.id===root.id?'centre':''}" style="left:${x}px;top:${y}px;width:${card}px">${hasParents?button(icon('chevron-down'),'x-focus','x-expand',`data-id="${p.id}" aria-label="展开${esc(p.name)}的祖先"`):''}<button class="x-node-hit" data-action="person-drawer" data-id="${p.id}" aria-label="查看${esc(p.name)}人物摘要">${avatar(p)}<strong>${esc(p.name)}</strong><small>${esc(p.birth||'?')}–${p.death?esc(p.death):'在世'}</small><span>${p.id===root.id?'中心人物':data.china[p.id]?.generation?data.china[p.id].generation+'世':pID(p)}</span></button>${sourceCount(p.id)?`<i class="x-node-source">${icon('file')}</i>`:''}</div>`}else if(node.child)nodes+=`<button class="x-tree-empty" style="left:${x}px;top:${y}px;width:${card}px" data-action="x-rel-start" data-id="${node.child}" data-kind="${node.kind}" data-group="${node.group||''}" aria-label="为${esc(byId(node.child).name)}添加${node.kind==='father'?'父亲':'母亲'}">${icon('plus')}<span>添加${node.kind==='father'?'父亲':'母亲'}</span></button>`}));return `<div class="x-tree-viewport" id="x-tree-viewport"><div id="x-tree-size" style="width:${w*state.zoom}px;height:${h*state.zoom}px"><div id="x-tree-surface" style="width:${w}px;height:${h}px;transform:scale(${state.zoom})"><svg class="x-tree-lines" width="${w}" height="${h}">${lines}</svg>${nodes}</div></div></div><div class="x-zoom-controls">${button(icon('minus'),'x-zoom-out','','aria-label="缩小家族树"')}<span>${Math.round(state.zoom*100)}%</span>${button(icon('plus'),'x-zoom-in','','aria-label="放大家族树"')}${button(icon('focus'),'x-centre','','aria-label="居中当前家族树"')}</div><div class="x-tree-tip">拖动查看 · 双指或按钮缩放 · 点击上箭头接续祖先</div>`}
+function corePortrait(root){const rows=treeLevels(root,state.generations),w=Math.max(356,2**(state.generations-1)*88),h=state.generations*137+40,card=76;let nodes='',lines='';rows.forEach((row,d)=>row.forEach((node,i)=>{const x=(i+.5)*w/row.length-card/2,y=(state.generations-1-d)*137+32;if(d<rows.length-1){for(let k=0;k<2;k++){const px=(i*2+k+.5)*w/(row.length*2),py=y-137+96;const parent=rows[d+1][i*2+k]?.p;lines+=`<path data-child="${node.p?.id||''}" data-parent="${parent?.id||''}" d="M${x+card/2} ${y}V${y-20}H${px}V${py}"/>`}}if(node.p){const p=node.p,hasParents=groups(p.id).some(g=>g.father||g.mother);nodes+=`<div class="x-tree-node ${p.sex==='F'?'female':''} ${p.id===root.id?'centre':''}" style="left:${x}px;top:${y}px;width:${card}px">${hasParents?button(icon('chevron-down'),'x-focus','x-expand',`data-id="${p.id}" aria-label="展开${esc(p.name)}的祖先"`):''}<button class="x-node-hit" data-action="person-drawer" data-id="${p.id}" aria-label="查看${esc(p.name)}人物摘要">${avatar(p)}<strong>${esc(p.name)}</strong><small>${esc(p.birth||'?')}–${p.death?esc(p.death):'在世'}</small><span>${p.id===root.id?'中心人物':data.china[p.id]?.generation?data.china[p.id].generation+'世':pID(p)}</span></button>${sourceCount(p.id)?`<i class="x-node-source">${icon('file')}</i>`:''}</div>`}else if(node.child)nodes+=`<button class="x-tree-empty" style="left:${x}px;top:${y}px;width:${card}px" data-action="x-rel-start" data-id="${node.child}" data-kind="${node.kind}" data-group="${node.group||''}" aria-label="为${esc(byId(node.child).name)}添加${node.kind==='father'?'父亲':'母亲'}">${icon('plus')}<span>添加${node.kind==='father'?'父亲':'母亲'}</span></button>`}));return `<div class="x-tree-viewport" id="x-tree-viewport"><div id="x-tree-size" style="width:${w*state.zoom}px;height:${h*state.zoom}px"><div id="x-tree-surface" style="width:${w}px;height:${h}px;transform:scale(${state.zoom})"><svg class="x-tree-lines" width="${w}" height="${h}">${lines}</svg>${nodes}</div></div></div><div class="x-zoom-controls">${button(icon('minus'),'x-zoom-out','','aria-label="缩小家族树"')}<span>${Math.round(state.zoom*100)}%</span>${button(icon('plus'),'x-zoom-in','','aria-label="放大家族树"')}${button(icon('focus'),'x-centre','','aria-label="居中当前家族树"')}</div><div class="x-tree-tip">拖动查看 · 双指或按钮缩放 · 点击上箭头接续祖先</div>`}
 function bindCoreTree(){const box=$('#x-tree-viewport');if(!box)return;box.scrollLeft=Math.max(0,(box.scrollWidth-box.clientWidth)/2);box.scrollTop=Math.max(0,box.scrollHeight-box.clientHeight);const pts=new Map();let start=null,pinch=null;box.addEventListener('pointerdown',e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);start={x:e.clientX,y:e.clientY,sx:box.scrollLeft,sy:box.scrollTop};if(pts.size===2){const [a,b]=[...pts.values()];pinch={dist:Math.hypot(a[0]-b[0],a[1]-b[1]),zoom:state.zoom}}});box.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size===2&&pinch){const[a,b]=[...pts.values()];const z=Math.max(.55,Math.min(1.6,pinch.zoom*Math.hypot(a[0]-b[0],a[1]-b[1])/pinch.dist));setTreeZoom(z,false);state.dragBlock=Date.now()+300}else if(start){const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)+Math.abs(dy)>7){box.scrollLeft=start.sx-dx;box.scrollTop=start.sy-dy;state.dragBlock=Date.now()+300;box.setPointerCapture(e.pointerId)}}});for(const event of ['pointerup','pointercancel'])box.addEventListener(event,e=>{pts.delete(e.pointerId);start=null;pinch=null});box.addEventListener('click',e=>{if(state.dragBlock>Date.now()){e.preventDefault();e.stopImmediatePropagation()}},true)}
 function setTreeZoom(z,centre=true){state.zoom=Math.round(Math.max(.55,Math.min(1.6,z))*100)/100;const s=$('#x-tree-surface'),b=$('#x-tree-viewport');if(s){const ratio=state.zoom/(parseFloat(s.style.transform.slice(6))||1);const cx=b.scrollLeft+b.clientWidth/2,cy=b.scrollTop+b.clientHeight/2;s.style.transform=`scale(${state.zoom})`;$('#x-tree-size').style.width=parseFloat(s.style.width)*state.zoom+'px';$('#x-tree-size').style.height=parseFloat(s.style.height)*state.zoom+'px';if(centre){b.scrollLeft=cx*ratio-b.clientWidth/2;b.scrollTop=cy*ratio-b.clientHeight/2}$('.x-zoom-controls span').textContent=Math.round(state.zoom*100)+'%'}}
 function coreFan(root){const rows=treeLevels(root,Math.min(5,state.generations)),colours=['#d7bf8b','#a8c3c3','#c5b5c7','#b9c5a0','#d8ac94'],polar=(r,a)=>[320+r*Math.cos(a*Math.PI/180),324+r*Math.sin(a*Math.PI/180)];let shapes='';rows.slice(1).forEach((row,d)=>row.forEach((n,i)=>{const a=-180+i*180/row.length,b=a+180/row.length,r1=43+d*63,r2=r1+61,p1=polar(r2,a),p2=polar(r2,b),p3=polar(r1,b),p4=polar(r1,a),t=polar((r1+r2)/2,(a+b)/2),cn=n.p?data.china[n.p.id]:{};let fill=colours[d%colours.length];if(state.fanMode==='sources')fill=n.p?(sourceCount(n.p.id)?'#9cc7a8':'#e4e7ea'):'#f2f3f4';if(state.fanMode==='branch')fill=cn?.branch?colours[data.clan.branches.findIndex(x=>x.id===cn.branch)%5]:'#e4e7ea';if(state.fanMode==='country')fill=n.p?(n.p.place?.includes('台湾')?'#78bcda':'#efc35e'):'#f1f2f3';if(!n.p)fill='#f0f1f2';shapes+=`<g ${n.p?`data-action="person-drawer" data-id="${n.p.id}" role="button" tabindex="0" aria-label="查看${esc(n.p.name)}人物摘要"`:''}><path d="M${p1}A${r2} ${r2} 0 0 1 ${p2}L${p3}A${r1} ${r1} 0 0 0 ${p4}Z" fill="${fill}" stroke="white" stroke-width="1.5"/>${n.p?`<text x="${t[0]}" y="${t[1]}" text-anchor="middle" font-size="${d>2?10:13}" fill="#26343c">${esc(n.p.name)}</text>`:''}</g>`}));return `<div class="x-fan"><svg viewBox="${320-(104+(Math.min(5,state.generations)-2)*63)-10} ${324-(104+(Math.min(5,state.generations)-2)*63)-10} ${(104+(Math.min(5,state.generations)-2)*63)*2+20} ${(104+(Math.min(5,state.generations)-2)*63)+70}" aria-label="以${esc(root.name)}为中心的${state.generations}代扇形图">${shapes}<circle cx="320" cy="324" r="41" fill="var(--seal, #087e93)" data-action="person-drawer" data-id="${root.id}"/><text x="320" y="324" text-anchor="middle" fill="white" font-size="15">${esc(root.name)}</text></svg></div><div class="x-fan-filters">${[['default','世代'],['country','出生地'],['sources','来源覆盖'],['branch','房支']].map(([v,t])=>button(t,'x-fan-filter',state.fanMode===v?'active':'',`data-mode="${v}"`)).join('')}</div><p class="x-fan-legend">${state.fanMode==='sources'?'绿色：已有来源　灰色：待补来源':state.fanMode==='country'?'金色：福建等地　蓝色：台湾　灰色：未记录':state.fanMode==='branch'?'颜色按已记录房支分组；未确认者显示灰色':'点击扇区查看人物资料；空白代表尚未录入'}</p><button class="x-wide-link" data-action="x-person-open" data-id="${root.id}">查看${esc(root.name)}资料 ${icon('chevron-right')}</button>`}
@@ -270,7 +270,7 @@ function chinaForm(id,placeOnly=false){const c=data.china[id]||{},p=byId(id);con
 function clanView(){const c=data.clan,poem=c.poem.trim().split(/[\s，、]+/).filter(Boolean);return `<div class="m-page">${coreHeader('字辈与房支','林氏家庭 · 中国族谱',true,button(icon('edit'),'x-clan-edit','m-icon-button','aria-label="编辑字辈与堂号"'))}<div class="x-clan-intro"><span class="x-eyebrow">族谱资料 · 虚构样例</span><h2>${esc(c.hall)}</h2><p>字辈、世次与房支分别记录，亲缘仍以关系及来源为依据。</p></div><section class="x-section"><div class="x-section-head"><h2>字辈序列</h2>${button('编辑','x-clan-edit','')}</div><div class="x-generation-poem">${poem.map((ch,i)=>`<div><strong>${esc(ch)}</strong><span>${Number(c.start)+i}世</span></div>`).join('')}</div>${poem.map((ch,i)=>{const ps=data.people.filter(p=>data.china[p.id]?.generationChar===ch);return `<div class="x-generation-row"><span>${esc(ch)}<small>${Number(c.start)+i}世</small></span><div>${ps.map(p=>`<a href="#person/${p.id}/details">${esc(p.name)}${p.relation==='待核重复档案'?' · 待核':''}</a>`).join('')||'<small>暂无已关联人物</small>'}</div></div>`}).join('')}</section><div class="x-family-heading"><h2>房支 ${c.branches.length}</h2>${button(icon('plus')+'新增房支','x-branch-edit','')}</div>${c.branches.map(b=>`<section class="x-section"><div class="x-section-head"><h2>${esc(b.name)}</h2>${button('编辑','x-branch-edit','',`data-id="${b.id}"`)}</div><p class="x-paragraph">始迁 / 房支起点：${esc(byId(b.founder)?.name||'待考')}<br>记载地点：${esc(b.place||'待核')}</p><div class="x-inline-links">${button('以此人查看家族树','x-focus','',`data-id="${b.founder}"`)}<span>${data.people.filter(p=>data.china[p.id]?.branch===b.id).length}位已标注人物</span></div></section>`).join('')}${mobileDemo()}</div>`}
 function clanForm(){modal('编辑字辈与堂号',`<form id="x-clan-form"><div class="field"><label for="x-clan-hall">堂号原文</label><input id="x-clan-hall" value="${esc(data.clan.hall)}" required maxlength="100"></div><div class="field"><label for="x-clan-poem">字辈序列（空格分隔）</label><input id="x-clan-poem" value="${esc(data.clan.poem)}" required maxlength="100"></div><div class="field"><label for="x-clan-start">起始世次</label><input id="x-clan-start" type="number" min="1" max="200" value="${data.clan.start}" required></div><div class="field"><label for="x-clan-reason">谱本或修订依据 *</label><textarea id="x-clan-reason" required maxlength="500"></textarea></div><p class="x-muted">修改序列不会自动改名或变更人物世次。</p><button type="submit" class="btn btn-primary x-full">保存字辈资料</button></form>`)}
 function branchForm(id){const b=data.clan.branches.find(b=>b.id===id);modal(b?'编辑房支':'新增房支',`<form id="x-branch-form" data-id="${id||''}"><div class="field"><label for="x-branch-name">房支名称 *</label><input id="x-branch-name" value="${esc(b?.name||'')}" required maxlength="60"></div><div class="field"><label for="x-branch-founder">起点人物 *</label><select id="x-branch-founder" required>${personOptions(b?.founder,'选择已录入人物')}</select></div><div class="field"><label for="x-branch-place">地点原文</label><input id="x-branch-place" value="${esc(b?.place||'')}" maxlength="100"></div><div class="field"><label for="x-branch-reason">设立或修改依据 *</label><textarea id="x-branch-reason" required maxlength="500"></textarea></div><button type="submit" class="btn btn-primary x-full">保存房支</button></form>`)}
-function homeView(){return `<div class="m-page">${coreHeader('发现','家续 · 家庭记忆与中国族谱')}<div class="x-discover-welcome"><span class="x-eyebrow">从人物与原始资料开始</span><h2>一页家谱，<br>接续家的故事。</h2><p>从一个名字，读懂家人的来处。</p><a class="book-home-link" href="#tree">翻开我的家谱 ${icon('arrow-right')}</a></div><div class="x-discover-grid">${[['tree','家族树','tree'],['check','研究待办','tasks'],['branch','字辈与房支','clan'],['pin','闽台寻根','roots']].map(([i,t,r])=>`<a href="#${r}">${icon(i)}<strong>${t}</strong>${icon('chevron-right')}</a>`).join('')}</div><div class="x-family-heading"><h2>继续研究</h2><a href="#tasks">${openTasks()}项待办</a></div><button class="x-feature-record" data-action="x-record-compare" data-id="p3" data-record="r1"><img src="assets/genealogy.svg" alt="林氏家谱示例谱页"><span><small>林文海 · 资料提示</small><strong>核对谱页中的名讳与父母</strong><em>对照原文，再关联人物 ${icon('arrow-right')}</em></span></button><div class="x-family-heading"><h2>AI整理助手</h2><a href="#studio">打开助手</a></div><div class="x-discover-grid compact">${[['book','识读老谱','ocr-route'],['sparkles','问家事','x-chat-open'],['image','保存记忆','upload-memory']].map(([i,t,a])=>`<button data-action="${a}">${icon(i)}<strong>${t}</strong></button>`).join('')}</div><div class="x-family-heading"><h2>家庭记忆</h2><a href="#memories">查看全部</a></div><div class="m-body"><div class="memory-grid">${data.memories.slice(0,2).map(memoryCard).join('')}</div></div>${mobileDemo()}</div>`}
+function homeView(){return `<div class="m-page">${coreHeader('发现','承序 · 家庭记忆与中国族谱')}<div class="x-discover-welcome"><span class="x-eyebrow">从人物与原始资料开始</span><h2>一页家谱，<br>接续家的故事。</h2><p>从一个名字，读懂家人的来处。</p><a class="book-home-link" href="#tree">翻开我的家谱 ${icon('arrow-right')}</a></div><div class="x-discover-grid">${[['tree','家族树','tree'],['check','研究待办','tasks'],['branch','字辈与房支','clan'],['pin','闽台寻根','roots']].map(([i,t,r])=>`<a href="#${r}">${icon(i)}<strong>${t}</strong>${icon('chevron-right')}</a>`).join('')}</div><div class="x-family-heading"><h2>继续研究</h2><a href="#tasks">${openTasks()}项待办</a></div><button class="x-feature-record" data-action="x-record-compare" data-id="p3" data-record="r1"><img src="assets/genealogy.svg" alt="林氏家谱示例谱页"><span><small>林文海 · 资料提示</small><strong>核对谱页中的名讳与父母</strong><em>对照原文，再关联人物 ${icon('arrow-right')}</em></span></button><div class="x-family-heading"><h2>AI整理助手</h2><a href="#studio">打开助手</a></div><div class="x-discover-grid compact">${[['book','识读老谱','ocr-route'],['sparkles','问家事','x-chat-open'],['image','保存记忆','upload-memory']].map(([i,t,a])=>`<button data-action="${a}">${icon(i)}<strong>${t}</strong></button>`).join('')}</div><div class="x-family-heading"><h2>家庭记忆</h2><a href="#memories">查看全部</a></div><div class="m-body"><div class="memory-grid">${data.memories.slice(0,2).map(memoryCard).join('')}</div></div>${mobileDemo()}</div>`}
 function rootsView(){return `<div class="m-page">${coreHeader('闽台寻根','跨谱联结 · 保留各自原文与版本',true)}<section class="x-roots-intro"><span class="x-eyebrow">南安 · 金门 · 台南</span><h2>沿着资料，寻找两地家脉。</h2><p>名讳、父母、世次与房支交叉核对，保留迁徙年代的不确定性。</p></section><div class="m-body"><section class="x-section"><div class="x-section-head"><h2>林文海的迁徙线索</h2><span class="x-pill amber">年份待考</span></div><div class="m-route-diagram">${[['南安','1924 · 谱页','s1'],['金门','约1948 · 口述','s3'],['台南','1962 · 家书','s2']].map(([n,t,id])=>`<button class="m-route-stop" data-action="source" data-id="${id}"><span>${icon('pin')}</span>${n}<small>${t}</small></button>`).join('')}</div><p class="x-muted">示意路线，不代表精确行程。通信地点与居住地点分别核对。</p></section><section class="x-section"><div class="x-section-head"><h2>两地谱本候选关联</h2><span class="x-pill ${data.linked?'':'amber'}">${data.linked?'已关联':'待核对'}</span></div><div class="x-crossbook"><div><span>闽南谱本</span><strong>林文海 · 字承远</strong><small>南安 · 林宗源之子</small></div>${icon('branch')}<div><span>台南家庭补记</span><strong>林文海 · 字承遠</strong><small>原籍南安 · 父宗源</small></div></div><button class="btn btn-primary x-full" data-action="compare">${data.linked?'查看或解除两谱关联':'核对名讳、父母与出处'}</button><p class="x-muted">关联后各谱本仍独立。不会把另一谱本的人物与整棵家族树直接合并。</p></section><section class="x-section"><div class="x-section-head"><h2>古今地名对照</h2>${button('核对','x-place-edit','',`data-id="p3"`)}</div><div class="x-fact-list"><div><label>原文</label><span>${esc(data.china.p3?.placeOriginal||'泉州南安')}</span></div><div><label>现代候选</label><span>${esc(data.china.p3?.placeModern||'福建省泉州市南安市')}</span></div><div><label>核对状态</label><span>${esc(data.china.p3?.placeStatus||'待考')}</span></div></div></section><section class="x-section"><div class="x-section-head"><h2>原文资料与研究笔记</h2>${button('补充','add-clue','')}</div>${data.sources.filter(s=>s.person==='p3').map(s=>`<button class="x-wide-link" data-action="source" data-id="${s.id}">${icon('file')}${esc(s.title)}${icon('chevron-right')}</button>`).join('')}${data.notes.filter(n=>n.person==='p3').map(n=>`<p class="x-paragraph">${esc(n.text)}</p>`).join('')}</section></div>${mobileDemo()}</div>`}
 function mobileMeView(){return `<div class="m-page">${coreHeader('更多','林氏家庭空间',false,button(icon('users'),'invite','m-icon-button','aria-label="邀请家人加入"'))}<div class="m-body"><div class="m-account-hero">${avatar(byId('p0'))}<div><h2>${esc(byId('p0').name)}</h2><p>家庭管理员 · 本地体验</p></div></div><div class="m-account-stats"><div><strong>${data.people.length}</strong><span>位人物</span></div><div><strong>${data.sources.length}</strong><span>条来源</span></div><div><strong>${data.memories.length}</strong><span>段记忆</span></div></div><section class="x-section x-menu">${[['branch','字辈、世次与房支','x-clan-open'],['users','家庭成员与邀请','members'],['star','关注的人物','x-following'],['file','搜索历史资料','x-record-search'],['history','最近修改与撤销','x-all-changes'],['download','资料备份与导出','export'],['sparkles','AI整理助手','mobile-ocr']].map(([i,t,a])=>button(icon(i)+t+icon('chevron-right'),a,'x-wide-link')).join('')}</section><section class="x-section x-menu">${[['help','原型体验指引','guide'],['shield','隐私与演示说明','about'],['history','恢复初始演示','reset-dialog']].map(([i,t,a])=>button(icon(i)+t+icon('chevron-right'),a,'x-wide-link')).join('')}</section><p class="x-muted">原型数据保存在当前浏览器。真实账号、权限、史料检索及AI服务将在正式开发中接入。</p></div>${mobileDemo()}</div>`}
 function guide(){modal('V3核心流程体验',`<p class="modal-description">人物、资料与谱本均为虚构样例。下面的关系编辑、字段选择、关联及撤销会保存在当前浏览器。</p><div class="m-howto">${[['01','祖先图 → 点人物 → 查看此人的树','tree'],['02','人物家庭 → 添加父母、配偶或子女','person/p3/family'],['03','研究待办 → 核对资料 → 选择字段并关联','tasks'],['04','重复人物 → 比较合并 → 变更记录撤销','person/p3/details'],['05','字辈与房支 → 编辑序列及房支人物','clan'],['06','闽台寻根 → 地名对照及两谱关联','roots']].map(([n,t,r])=>`<a href="#${r}"><span>${n}</span>${t}${icon('chevron-right')}</a>`).join('')}</div>`)}
@@ -342,11 +342,144 @@ document.addEventListener('submit',e=>{const f=e.target;if(!f.id.startsWith('x-'
 // Override generic creation/reset flows so every person uses the same relationship store.
 document.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;if(el.dataset.action==='add-person'){e.preventDefault();e.stopImmediatePropagation();relationStart(state.route==='person'?state.person:state.treeFocus||'p0','child')}if(el.dataset.action==='reset-demo'){e.preventDefault();e.stopImmediatePropagation();data={people:structuredClone(peopleSeed),memories:structuredClone(memorySeed),sources:structuredClone(sourceSeed),favorites:[],followed:[],activities:[],notes:[],ocrDone:false,linked:false};initCore();state.ocrStage=1;state.chat=[];state.interviewStep=0;state.treeFocus='p0';state.generations=3;state.zoom=1;state.treeView='portrait';closeModal();go('tree');toast('已恢复V3虚构演示资料')}} ,true);
 
+const renderCore = render;
+const profileCore = profileView;
+let archivePerson = 'p3';
+let archivePanelOpen = true;
+let archivePage = 0;
+let archiveVertical = false;
+let archiveMotion = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function archiveHome() {
+  const firstYear = Math.min(...data.people.map(p => Number(p.birth)).filter(Boolean));
+  const generations = new Set(Object.values(data.china).map(p => p.generation).filter(Boolean)).size;
+  return `<article class="archive-page"><div class="archive-hero">
+    <div><span class="archive-seal" aria-label="林氏印章">林氏</span>
+    <p class="archive-kicker">南安林氏 · 西河堂 · 2026 修订</p><h1>林氏家谱</h1><p class="archive-english">LIN FAMILY ARCHIVE</p>
+    <p>知所从来，明所将往。</p><p>从福建南安的一页旧谱，到台南的一封家书。我们把分散在两地的名字、影像和口述，整理为家人可以共同续写的藏书。</p>
+    <dl class="archive-stats"><div><dt>收录世次</dt><dd>${generations}</dd></div><div><dt>家族成员</dt><dd>${data.people.length}</dd></div><div><dt>最早出生记载</dt><dd>${firstYear}</dd></div></dl>
+    <a class="archive-primary" href="#book">翻阅族谱 →</a> <a class="archive-link" href="#tree">探索家族</a></div>
+    <figure><img src="assets/family-archive.webp" alt="虚构林氏家庭合影"><figcaption>南安林氏家庭合影 · 虚构档案影像</figcaption></figure>
+    </div><div class="archive-index"><a href="#chronicle"><h2>家族历史</h2><p>从南安到台南，沿着家书读一段迁徙往事。</p></a><a href="#memories"><h2>家族记忆</h2><p>查阅照片、书信与手稿。</p></a><a href="#person/p3/changes"><h2>近期修订</h2><p>${esc(data.revisions[0]?.title || '查阅林文海档案的修订记录。')}</p></a></div></article>`;
+}
+
+function archiveBook() {
+  const rows = data.people.map(p => `<p><a href="#person/${p.id}/details">${esc(p.name)}</a>　${lifespan(p)}　${esc(p.origin || p.place || '籍贯待考')}</p>`);
+  const chapters = [
+    ['林氏家谱', '<p>南安林氏家藏 · 二〇二六年修订</p><p>知所从来，明所将往。</p>'],
+    ['家族谱序', '<p>本谱汇录家中旧谱、书信与口述所见。对尚无确证的年代与亲缘，保留待考记录，供后人核对。</p>'],
+    ['家族源流', '<p>林氏祖籍福建南安。林文海生于一九二四年，后于台南生活。金门迁居年份尚待家人核对。</p><a href="../atlas.html#journey">查阅迁徙地图</a>'],
+    ['世系表', rows.slice(0, Math.ceil(rows.length / 2)).join('')],
+    ['世系表续', rows.slice(Math.ceil(rows.length / 2)).join('')],
+    ['人物小传', data.people.filter(p => ['p3','p4'].includes(p.id)).map(p => `<h3>${esc(p.name)}</h3><p>${esc(p.bio)}</p>`).join('')],
+    ['家训家风', '<p>敬长亲幼，守信待人。旧事宜据实记述，家人所述各存其本。</p>'],
+    ['修谱记录', data.revisions.map(r => `<p>${esc(r.time)}　${esc(r.title)}</p>`).join('') || '<p>二〇二六年建立数字家谱。</p>']
+  ];
+  const page = ([title, body], index) => `<section class="archive-sheet"><div><h2>${title}</h2>${body}</div><small>${index + 1}</small></section>`;
+  return `<article class="archive-page archive-reader"><header><h1>传统族谱</h1><a href="#tree">切换世系图谱</a></header>
+    <div class="archive-tools"><label>章节 <select id="archive-chapter">${chapters.map(([title], index) => `<option value="${index}" ${index===archivePage?'selected':''}>${title}</option>`).join('')}</select></label>
+    <button data-book="previous" ${archivePage===0?'disabled':''}>上一页</button><button data-book="next" ${archivePage>=7?'disabled':''}>下一页</button>
+    <button data-book="layout" aria-pressed="${archiveVertical}">${archiveVertical?'改用横排':'改用竖排'}</button><button data-book="motion" aria-pressed="${archiveMotion}">翻页动画${archiveMotion?'开启':'关闭'}</button><button data-book="full">全屏</button><button data-book="print">导出 PDF</button></div>
+    <div class="archive-spread ${archiveVertical?'vertical':''} ${archiveMotion?'animated':''}">${chapters.slice(archivePage,archivePage+2).map((chapter,i)=>page(chapter,archivePage+i)).join('')}</div>
+    <div class="archive-print">${chapters.map(page).join('')}</div></article>`;
+}
+
+function archiveDirectory() {
+  return `<article class="archive-page"><h1>人物档案</h1><label>按姓名筛选 <input id="archive-name" type="search"></label><ul class="archive-directory">${data.people.map(p => `<li><a href="#person/${p.id}/details"><strong>${esc(p.name)}</strong><span>${lifespan(p)}　${esc(p.origin || p.place)}</span></a></li>`).join('')}</ul></article>`;
+}
+
+function archiveChronicle() {
+  return `<article class="archive-page"><h1>家族记事</h1><div class="archive-chronicle">${data.memories.slice().sort((a,b)=>String(a.year).localeCompare(String(b.year))).map(m => `<article><time>${esc(m.year)}</time><div><h2>${esc(m.title)}</h2><p>${esc(m.desc || m.body)}</p>${button('打开档案','memory','',`data-id="${esc(m.id)}"`)}</div></article>`).join('')}</div></article>`;
+}
+
+profileView = function () {
+  const p = byId(state.person) || byId('p3');
+  const photo = p.id === 'p3' ? '<figure class="archive-portrait"><img src="assets/family-archive.webp" alt="虚构林氏合影中的林文海"><figcaption>家庭合影局部 · 虚构档案</figcaption></figure>' : '';
+  return profileCore().replace('<div class="x-profile-shortcuts">', `<section class="archive-bio">${photo}<div><h2>人物小传</h2><p>${esc(p.bio || '这位家人的生平仍待补录。')}</p></div></section><div class="x-profile-shortcuts">`);
+};
+
+function showArchivePerson() {
+  const panel = $('#archive-context');
+  const p = byId(archivePerson);
+  const onTree = state.route === 'tree';
+  $$('.x-tree-node.archive-selected,.x-tree-node.archive-relative,.x-tree-lines .archive-path').forEach(node => node.classList.remove('archive-selected','archive-relative','archive-path'));
+  panel.hidden = !onTree || !archivePanelOpen || !p;
+  $('.web-workspace').classList.toggle('has-context', !panel.hidden);
+  if (!onTree || !p || panel.hidden) return;
+  const family = [[byId(parents(p.id).father),'父亲'],[byId(parents(p.id).mother),'母亲'],...partners(p.id).map(u=>[byId(u.partners.find(id=>id!==p.id)),'配偶']),...children(p.id).map(c=>[c,'子女'])].filter(([person])=>person);
+  panel.innerHTML = `<div class="archive-context-head"><span>人物小传</span><button data-book="context" aria-label="收起人物小传">×</button></div>
+    ${avatar(p)}<h2>${esc(p.name)}</h2><p class="archive-kicker">${lifespan(p)} · ${esc(p.origin || p.place || '籍贯待考')}</p>
+    <p>${esc(p.bio || '生平资料待补录。')}</p><h3>家庭关系</h3><ul>${family.map(([q,label])=>`<li><button data-archive-person="${q.id}">${label} · ${esc(q.name)}</button></li>`).join('')}</ul>
+    <a class="archive-link" href="#person/${p.id}/details">查看完整档案 →</a><p><a class="archive-primary" href="#person/${p.id}/family">编辑家庭关系</a></p>`;
+  $$('.x-tree-lines path').forEach(line => {
+    line.classList.toggle('archive-path', (line.dataset.child === p.id && !!line.dataset.parent) || (line.dataset.parent === p.id && !!line.dataset.child));
+  });
+  $$('.x-tree-node').forEach(node => {
+    const id = node.querySelector('.x-node-hit')?.dataset.id;
+    node.classList.toggle('archive-selected', id === p.id);
+    node.classList.toggle('archive-relative', family.some(([relative])=>relative.id===id));
+  });
+}
+
+render = function () {
+  const view = {home:archiveHome,book:archiveBook,directory:archiveDirectory,chronicle:archiveChronicle}[state.route];
+  if (view) {
+    $('#main').innerHTML = view();
+    fillIcons();
+  } else {
+    renderCore();
+    if(state.route==='tree') {
+      $('.x-app-bar h1').textContent = '世系图谱';
+      $('.m-head-actions').insertAdjacentHTML('afterbegin','<button class="archive-tool" data-book="full">全屏</button><button class="archive-tool" data-book="context">人物小传</button>');
+    }
+  }
+  showArchivePerson();
+};
+
+document.addEventListener('click', async event => {
+  const target = event.target.closest('[data-book],[data-archive-person],[data-action="person-drawer"]');
+  if (!target) return;
+  const id = target.dataset.archivePerson || (state.route === 'tree' && innerWidth >= 1200 ? target.dataset.id : '');
+  if (id && byId(id) && (target.dataset.archivePerson || target.dataset.action === 'person-drawer') && !(state.dragBlock > Date.now())) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    archivePerson = id;
+    archivePanelOpen = true;
+    showArchivePerson();
+    return;
+  }
+  switch(target.dataset.book) {
+    case 'context': archivePanelOpen=!archivePanelOpen; showArchivePerson(); break;
+    case 'previous': archivePage=Math.max(0,archivePage-2); render(); break;
+    case 'next': archivePage=Math.min(7,archivePage+2); render(); break;
+    case 'layout': archiveVertical=!archiveVertical; render(); break;
+    case 'motion': archiveMotion=!archiveMotion; render(); break;
+    case 'print': window.print(); break;
+    case 'full':
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await $('#main').requestFullscreen();
+      } catch { toast('当前窗口不支持全屏'); }
+      break;
+  }
+}, true);
+
+document.addEventListener('input', event => {
+  if (event.target.id !== 'archive-name') return;
+  $$('.archive-directory li').forEach(row => row.hidden = !row.textContent.includes(event.target.value.trim()));
+});
+document.addEventListener('change', event => {
+  if(event.target.id !== 'archive-chapter') return;
+  archivePage=Number(event.target.value);
+  render();
+  $('#archive-chapter').focus();
+});
+
 function fitDevice() {}
 function updateWorkspaceNavigation() {
-    const active = location.hash.split('/')[0] || '#tree';
+    const active = location.hash.split('/')[0] || '#home';
     document.querySelectorAll('.workspace-nav a').forEach(link => {
-      if (link.hash === active || (active === '#person' && link.hash === '#tree')) link.setAttribute('aria-current','page');
+      if (link.hash === active || (active === '#person' && link.hash === '#directory')) link.setAttribute('aria-current','page');
       else link.removeAttribute('aria-current');
     });
   }
