@@ -518,7 +518,7 @@ const portraitPositions = {
 };
 let archiveLand;
 let archiveLandFailed = false;
-let mapMode = 'china';
+let mapMode = 'world';
 let mapPlace = '';
 let mapCamera = null;
 
@@ -584,6 +584,7 @@ function archiveMapView() {
     mapCamera = null;
     if (mapMode==='regional' && !['nanan','xiamen','zhangzhou','kinmen','tainan','chiayi'].includes(requested)) mapMode='china';
     if (archivePlaces[requested][1]<70 || archivePlaces[requested][1]>140 || archivePlaces[requested][2]<16 || archivePlaces[requested][2]>55) mapMode='world';
+    if (mapMode==='world') centerArchiveGlobe(requested);
   }
   const bounds = {china:[70,-56,72,44],world:[-180,-83,360,154],regional:[116.5,-26,5.4,4.2]}[mapMode];
   const [x,y,w,h] = bounds;
@@ -593,12 +594,12 @@ function archiveMapView() {
   const polygons = archiveLand?.features.flatMap(({geometry}) => geometry.type==='Polygon' ? [geometry.coordinates] : geometry.coordinates) ?? [];
   const outline = polygons.map(polygon => polygon.map(ring => ring.map(([lon,lat],i)=>`${i?'L':'M'}${lon},${-lat}`).join('')+'Z').join('')).join('');
   return `<article class="archive-page archive-map-page"><h1>家族地图</h1><p>从出生地、祖籍和家族事件查找相关人物。</p>
-    <div class="archive-tools"><button data-archive-map="world" aria-pressed="${mapMode==='world'}">世界地图</button><button data-archive-map="china" aria-pressed="${mapMode==='china'}">中国地图</button><button data-archive-map="regional" aria-pressed="${mapMode==='regional'}">闽台近览</button></div>
-    <p class="archive-kicker">将鼠标移到地图上滚动缩放。</p>
-    <button type="button" class="archive-tool" data-map-reset>重置视野</button>
-    <svg class="archive-map" data-map-bounds="${bounds.join(' ')}" viewBox="${(mapCamera || bounds).join(' ')}" role="group" aria-label="${{china:'中国',world:'世界',regional:'闽台'}[mapMode]}地点示意">
+    <div class="archive-tools"><button data-archive-map="world" aria-pressed="${mapMode==='world'}">世界地球</button><button data-archive-map="china" aria-pressed="${mapMode==='china'}">中国地图</button><button data-archive-map="regional" aria-pressed="${mapMode==='regional'}">闽台近览</button></div>
+    <p class="archive-kicker">${mapMode==='world'?'拖动旋转地球':'拖动平移地图'}，使用滚轮或双指缩放。</p>
+    <div class="archive-map-controls" role="group" aria-label="地图缩放"><button type="button" class="archive-tool" data-map-zoom="in" aria-label="放大地图">＋</button><button type="button" class="archive-tool" data-map-zoom="out" aria-label="缩小地图">−</button><button type="button" class="archive-tool" data-map-reset>重置视野</button></div>
+    ${mapMode==='world' ? archiveGlobeMarkup(visible,linked,key) : `<svg class="archive-map" data-map-bounds="${bounds.join(' ')}" viewBox="${(mapCamera || bounds).join(' ')}" tabindex="0" role="group" aria-label="${{china:'中国',world:'世界',regional:'闽台'}[mapMode]}地点示意">
     <path d="${outline}" fill-rule="evenodd"/>
-    ${visible.filter(([id])=>linked[id]).map(([id,[label,lon,lat]])=>`<g tabindex="0" role="button" data-map-pin="${id}" aria-label="${label}" aria-pressed="${id===key}"><circle cx="${lon}" cy="${-lat}" r="${(mapCamera?.[2] ?? w)/155}"/></g>`).join('')}</svg>
+    ${visible.filter(([id])=>linked[id]).map(([id,[label,lon,lat]])=>`<g tabindex="0" role="button" data-map-pin="${id}" aria-label="${label}" aria-pressed="${id===key}"><circle cx="${lon}" cy="${-lat}" r="${(mapCamera?.[2] ?? w)/155}"/></g>`).join('')}</svg>`}
     <p class="archive-kicker">${archiveLandFailed?'底图暂不可用 · 可通过下方列表查看地点':'Natural Earth 底图 · 地点为城市级示意'}</p>
     <div class="archive-tools archive-places">${visible.map(([id,[label]])=>`<button data-map-pin="${id}" aria-pressed="${id===key}">${label} · ${linked[id]?.size || 0} 人</button>`).join('')}</div>
     <h2>${name}的相关人物</h2><ul class="archive-directory">${[...(linked[key] || [])].map(([id,kinds])=>`<li><a href="#person/${id}/details"><strong>${esc(byId(id).name)}</strong><span>${[...kinds].map(esc).join(' · ')}</span></a></li>`).join('')}</ul>
@@ -642,10 +643,12 @@ document.addEventListener('click',event => {
   if (mode) {
     mapMode=mode;
     mapCamera=null;
+    if (mode==='world') centerArchiveGlobe(mapPlace);
     if (location.hash !== '#map') location.hash='map';
     else render();
   } else {
     mapPlace=item.dataset.mapPin;
+    if (mapMode==='world' && item.tagName==='BUTTON') centerArchiveGlobe(mapPlace);
     if (location.hash !== '#map/'+mapPlace) location.hash='map/'+mapPlace;
     else render();
   }
@@ -667,27 +670,192 @@ function applyArchiveCamera(map, camera) {
   map.querySelectorAll('circle').forEach(pin => pin.setAttribute('r',view[2]/155));
 }
 
+function archiveMapBounds(map) {
+  return map.dataset.mapBounds.split(' ').map(Number);
+}
+
+function moveArchiveCamera(map, from, to, factor = 1) {
+  if (map.classList.contains('archive-globe')) {
+    const degrees = 145 / Math.max(1,map.clientWidth) / globeView.zoom;
+    globeView.lon = ((globeView.lon-(to.x-from.x)*degrees+540)%360)-180;
+    globeView.lat = Math.max(-80,Math.min(80,globeView.lat+(to.y-from.y)*degrees));
+    globeView.zoom = Math.max(1,Math.min(6,globeView.zoom/factor));
+    scheduleArchiveGlobe();
+    return;
+  }
+  const screen = map.getScreenCTM()?.inverse();
+  if (!screen) return;
+  const anchor = new DOMPoint(from.x,from.y).matrixTransform(screen);
+  const destination = new DOMPoint(to.x,to.y).matrixTransform(screen);
+  const [baseX,baseY,baseWidth,baseHeight] = archiveMapBounds(map);
+  const [x,y,width,height] = mapCamera || archiveMapBounds(map);
+  const nextWidth = Math.min(baseWidth,Math.max(baseWidth/12,width*factor));
+  const scale = nextWidth/width;
+  const nextHeight = height*scale;
+  const nextX = Math.min(baseX+baseWidth-nextWidth,Math.max(baseX,anchor.x-(destination.x-x)*scale));
+  const nextY = Math.min(baseY+baseHeight-nextHeight,Math.max(baseY,anchor.y-(destination.y-y)*scale));
+  applyArchiveCamera(map,[nextX,nextY,nextWidth,nextHeight]);
+}
+
+function mapCenter(map) {
+  const {left,top,width,height} = map.getBoundingClientRect();
+  return {x:left+width/2,y:top+height/2};
+}
+
 document.addEventListener('wheel', event => {
   const map = event.target.closest('.archive-map');
   if (!map || !event.deltaY || event.ctrlKey || event.metaKey) return;
   event.preventDefault();
-  const matrix = map.getScreenCTM();
-  if (!matrix) return;
-  const anchor = new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix.inverse());
-  const [baseX, baseY, baseWidth, baseHeight] = map.dataset.mapBounds.split(' ').map(Number);
-  const [x,y,width,height] = mapCamera || [baseX,baseY,baseWidth,baseHeight];
-  const nextWidth = Math.min(baseWidth, Math.max(baseWidth/12, width*Math.exp(Math.sign(event.deltaY)*.17)));
-  const scale = nextWidth/width;
-  const nextHeight = height*scale;
-  const nextX = Math.min(baseX+baseWidth-nextWidth, Math.max(baseX,anchor.x-(anchor.x-x)*scale));
-  const nextY = Math.min(baseY+baseHeight-nextHeight, Math.max(baseY,anchor.y-(anchor.y-y)*scale));
-  applyArchiveCamera(map,[nextX,nextY,nextWidth,nextHeight]);
+  const point = {x:event.clientX,y:event.clientY};
+  moveArchiveCamera(map,point,point,Math.exp(Math.sign(event.deltaY)*.17));
 }, {passive:false});
 
-document.addEventListener('click', event => {
-  if (!event.target.closest('[data-map-reset]')) return;
-  applyArchiveCamera($('.archive-map'),null);
+const mapPointers = new Map();
+let gestureMap;
+let mapMoved = false;
+let suppressMapClick = false;
+
+function mapGesture() {
+  const [first,second] = mapPointers.values();
+  if (!second) return {point:first,distance:0};
+  return {point:{x:(first.x+second.x)/2,y:(first.y+second.y)/2},
+    distance:Math.hypot(first.x-second.x,first.y-second.y)};
+}
+
+document.addEventListener('pointerdown', event => {
+  const map = event.target.closest('.archive-map');
+  if (!map || event.button !== 0) return;
+  if (gestureMap !== map || !mapPointers.size) {
+    mapPointers.clear();
+    mapMoved = false;
+    suppressMapClick = false;
+    gestureMap = map;
+  }
+  if (mapPointers.size >= 2) return;
+  mapPointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if (mapPointers.size === 2) {
+    mapMoved = true;
+    for (const id of mapPointers.keys()) map.setPointerCapture(id);
+  }
 });
+
+document.addEventListener('pointermove', event => {
+  if (!mapPointers.has(event.pointerId) || !gestureMap?.isConnected) return;
+  const previous = mapGesture();
+  const point = {x:event.clientX,y:event.clientY};
+  if (!mapMoved && Math.hypot(point.x-previous.point.x,point.y-previous.point.y)<5) return;
+  mapPointers.set(event.pointerId,point);
+  const next = mapGesture();
+  mapMoved = true;
+  gestureMap.classList.add('dragging');
+  if (!gestureMap.hasPointerCapture(event.pointerId)) gestureMap.setPointerCapture(event.pointerId);
+  moveArchiveCamera(gestureMap,previous.point,next.point,previous.distance && next.distance ? previous.distance/next.distance : 1);
+});
+
+function finishMapPointer(event) {
+  if (!mapPointers.delete(event.pointerId)) return;
+  suppressMapClick = mapMoved;
+  if (!mapPointers.size) gestureMap.classList.remove('dragging');
+}
+document.addEventListener('pointerup',finishMapPointer);
+document.addEventListener('pointercancel',finishMapPointer);
+document.addEventListener('click', event => {
+  if (!event.target.closest('.archive-map') || !suppressMapClick || event.detail===0) return;
+  suppressMapClick=false;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+},true);
+
+document.addEventListener('click', event => {
+  const control = event.target.closest('[data-map-reset],[data-map-zoom]');
+  if (!control) return;
+  const map = $('.archive-map');
+  if (control.hasAttribute('data-map-reset')) {
+    resetArchiveMap(map);
+    return;
+  }
+  const point = mapCenter(map);
+  moveArchiveCamera(map,point,point,control.dataset.mapZoom==='in' ? .75 : 1/.75);
+});
+
+document.addEventListener('dblclick', event => {
+  const map=event.target.closest('.archive-map');
+  if (!map || event.target.closest('[data-map-pin]')) return;
+  const point={x:event.clientX,y:event.clientY};
+  moveArchiveCamera(map,point,point,.65);
+});
+
+document.addEventListener('keydown', event => {
+  const map = event.target.closest('.archive-map');
+  if (!map) return;
+  const offsets = {ArrowLeft:[64,0],ArrowRight:[-64,0],ArrowUp:[0,64],ArrowDown:[0,-64]};
+  const offset = offsets[event.key];
+  const center = mapCenter(map);
+  if (offset) moveArchiveCamera(map,center,{x:center.x+offset[0],y:center.y+offset[1]});
+  else if (['+','=','-'].includes(event.key)) moveArchiveCamera(map,center,center,event.key==='-' ? 1/.75 : .75);
+  else if (event.key==='Home') resetArchiveMap(map);
+  else return;
+  event.preventDefault();
+});
+
+
+const initialGlobe = {lon:118.7,lat:24.8,zoom:1};
+let globeView = {...initialGlobe};
+let globeFrame = 0;
+let globeRenderer;
+
+function centerArchiveGlobe(key) {
+  const place = archivePlaces[key];
+  globeView = place ? {lon:place[1],lat:place[2],zoom:1} : {...initialGlobe};
+}
+
+function resetArchiveMap(map) {
+  if (map.classList.contains('archive-globe')) {
+    globeView = {...initialGlobe};
+    scheduleArchiveGlobe();
+  } else {
+    applyArchiveCamera(map,null);
+  }
+}
+
+function archiveGlobeMarkup(places,linked,selected) {
+  queueMicrotask(scheduleArchiveGlobe);
+  return `<div class="archive-map archive-globe" tabindex="0" role="group" aria-label="可旋转的世界地球">
+    <div class="archive-globe-surface"><canvas aria-hidden="true"></canvas><svg viewBox="-1 -1 2 2" aria-label="地球地点">
+      ${places.filter(([key])=>linked[key]).map(([key,[label]])=>`<g tabindex="0" role="button" data-map-pin="${key}" aria-label="${label}" aria-pressed="${selected===key}" style="display:none"><circle r=".023"/></g>`).join('')}
+    </svg></div>
+  </div>`;
+}
+
+function scheduleArchiveGlobe() {
+  if (globeFrame || !archiveLand || !$('.archive-globe')) return;
+  globeFrame = requestAnimationFrame(async () => {
+    globeFrame = 0;
+    try {
+      globeRenderer ??= await import('../globe.js?v=interactive1');
+    } catch {
+      if ($('.archive-globe')) $('.archive-globe').ariaLabel = '地球暂不可用，可使用下方地点列表';
+      return;
+    }
+    const globe = $('.archive-globe');
+    if (!globe) return;
+    const radius = .92*globeView.zoom;
+    globeRenderer.drawGlobe(globe.querySelector('canvas'),archiveLand,{...globeView,radius,maxPixels:450});
+    const radians = Math.PI/180;
+    const centerLat = globeView.lat*radians;
+    globe.querySelectorAll('[data-map-pin]').forEach(pin => {
+      const [,lon,lat] = archivePlaces[pin.dataset.mapPin];
+      const theta = (lon-globeView.lon)*radians;
+      const phi = lat*radians;
+      const east = Math.cos(phi)*Math.sin(theta)*radius;
+      const north = (Math.cos(centerLat)*Math.sin(phi)-Math.sin(centerLat)*Math.cos(phi)*Math.cos(theta))*radius;
+      const front = Math.sin(centerLat)*Math.sin(phi)+Math.cos(centerLat)*Math.cos(phi)*Math.cos(theta);
+      pin.style.display = front>0 && Math.abs(east)<.99 && Math.abs(north)<.99 ? '' : 'none';
+      pin.setAttribute('transform',`translate(${east} ${-north})`);
+    });
+  });
+}
+addEventListener('resize',scheduleArchiveGlobe);
 
 function fitDevice() {}
 function updateWorkspaceNavigation() {

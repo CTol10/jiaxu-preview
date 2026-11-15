@@ -1,6 +1,6 @@
 const radians = Math.PI / 180;
 let texture;
-let renderedSize = 0;
+const lastFrames = new WeakMap();
 
 function createTexture(land) {
   const canvas = document.createElement('canvas');
@@ -28,35 +28,36 @@ function createTexture(land) {
   return context.getImageData(0,0,1440,720).data;
 }
 
-export function drawGlobe(canvas, land) {
+export function drawGlobe(canvas, land, {lon=118.7, lat=24.8, radius=1, maxPixels=Infinity} = {}) {
   const width = canvas.clientWidth;
-  const size = Math.floor(width * Math.min(devicePixelRatio || 1, 2));
-  if (size < 2 || renderedSize === size) return;
-  renderedSize = size;
+  const size = Math.min(maxPixels,Math.floor(width * Math.min(devicePixelRatio || 1, 2)));
+  const frame = [size,lon,lat,radius].join('/');
+  if (size < 2 || lastFrames.get(canvas) === frame) return;
+  lastFrames.set(canvas,frame);
   texture ??= createTexture(land);
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext('2d');
   const image = context.createImageData(size,size);
-  const latitude = 24.8*radians;
+  const latitude = lat*radians;
   const sinCenter = Math.sin(latitude);
   const cosCenter = Math.cos(latitude);
   for (let y=0; y<size; y++) for (let x=0; x<size; x++) {
-    const east = (x+.5)*2/size-1;
-    const north = 1-(y+.5)*2/size;
-    const radius = east*east+north*north;
-    if (radius >= 1) continue;
-    const front = Math.sqrt(1-radius);
+    const east = ((x+.5)*2/size-1)/radius;
+    const north = (1-(y+.5)*2/size)/radius;
+    const distance = east*east+north*north;
+    if (distance >= 1) continue;
+    const front = Math.sqrt(1-distance);
     const lat = Math.asin(north*cosCenter+front*sinCenter)/radians;
-    const lon = 118.7+Math.atan2(east,front*cosCenter-north*sinCenter)/radians;
-    const tx = (Math.floor((lon+180)*4)+1440)%1440;
+    const longitude = lon+Math.atan2(east,front*cosCenter-north*sinCenter)/radians;
+    const tx = (Math.floor((longitude+180)*4)+2880)%1440;
     const ty = Math.min(719,Math.floor((90-lat)*4));
     const sample = (ty*1440+tx)*4;
     const pixel = (y*size+x)*4;
     const light = .65+.52*Math.max(0,.76*front-.36*east+.46*north);
     const rim = Math.pow(1-front,6)*75;
     for (let channel=0; channel<3; channel++) image.data[pixel+channel] = texture[sample+channel]*light+rim;
-    image.data[pixel+3] = Math.min(255,(1-radius)*size*160);
+    image.data[pixel+3] = Math.min(255,(1-distance)*size*160);
   }
   context.putImageData(image,0,0);
 }

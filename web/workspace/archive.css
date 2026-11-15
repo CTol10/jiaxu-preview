@@ -119,3 +119,11 @@
   #archive-context:not([hidden]){display:block;position:absolute;z-index:15;inset:64px 0 0 auto;width:min(352px,100%);box-shadow:-8px 0 24px #2c2b2530}
   .archive-tool[data-book=context]{display:inline-flex}
 }
+.archive-map{touch-action:none;cursor:grab;user-select:none}
+.archive-map.dragging,.archive-map.dragging g{cursor:grabbing}
+.archive-map-controls{display:flex;gap:6px;margin:0 0 10px}
+.archive-map:focus-visible{outline:2px solid var(--seal);outline-offset:3px}
+.archive-globe{display:grid;place-items:center;background:#e7e3d8;overflow:hidden}
+.archive-globe-surface{position:relative;width:min(100%,500px);aspect-ratio:1}
+.archive-globe-surface canvas,.archive-globe-surface svg{position:absolute;inset:0;width:100%;height:100%}
+.archive-globe-surface canvas{pointer-events:none}
