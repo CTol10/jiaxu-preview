@@ -520,6 +520,7 @@ let archiveLand;
 let archiveLandFailed = false;
 let mapMode = 'china';
 let mapPlace = '';
+let mapCamera = null;
 
 function archivePortrait(person) {
   const position = portraitPositions[person.id];
@@ -580,6 +581,7 @@ function archiveMapView() {
   const requested = location.hash.split('/')[1];
   if (requested && requested !== mapPlace && Object.hasOwn(archivePlaces,requested)) {
     mapPlace = requested;
+    mapCamera = null;
     if (mapMode==='regional' && !['nanan','xiamen','zhangzhou','kinmen','tainan','chiayi'].includes(requested)) mapMode='china';
     if (archivePlaces[requested][1]<70 || archivePlaces[requested][1]>140 || archivePlaces[requested][2]<16 || archivePlaces[requested][2]>55) mapMode='world';
   }
@@ -592,9 +594,11 @@ function archiveMapView() {
   const outline = polygons.map(polygon => polygon.map(ring => ring.map(([lon,lat],i)=>`${i?'L':'M'}${lon},${-lat}`).join('')+'Z').join('')).join('');
   return `<article class="archive-page archive-map-page"><h1>家族地图</h1><p>从出生地、祖籍和家族事件查找相关人物。</p>
     <div class="archive-tools"><button data-archive-map="world" aria-pressed="${mapMode==='world'}">世界地图</button><button data-archive-map="china" aria-pressed="${mapMode==='china'}">中国地图</button><button data-archive-map="regional" aria-pressed="${mapMode==='regional'}">闽台近览</button></div>
-    <svg class="archive-map" viewBox="${bounds.join(' ')}" role="group" aria-label="${{china:'中国',world:'世界',regional:'闽台'}[mapMode]}地点示意">
+    <p class="archive-kicker">将鼠标移到地图上滚动缩放。</p>
+    <button type="button" class="archive-tool" data-map-reset>重置视野</button>
+    <svg class="archive-map" data-map-bounds="${bounds.join(' ')}" viewBox="${(mapCamera || bounds).join(' ')}" role="group" aria-label="${{china:'中国',world:'世界',regional:'闽台'}[mapMode]}地点示意">
     <path d="${outline}" fill-rule="evenodd"/>
-    ${visible.filter(([id])=>linked[id]).map(([id,[label,lon,lat]])=>`<g tabindex="0" role="button" data-map-pin="${id}" aria-label="${label}" aria-pressed="${id===key}"><circle cx="${lon}" cy="${-lat}" r="${w/155}"/></g>`).join('')}</svg>
+    ${visible.filter(([id])=>linked[id]).map(([id,[label,lon,lat]])=>`<g tabindex="0" role="button" data-map-pin="${id}" aria-label="${label}" aria-pressed="${id===key}"><circle cx="${lon}" cy="${-lat}" r="${(mapCamera?.[2] ?? w)/155}"/></g>`).join('')}</svg>
     <p class="archive-kicker">${archiveLandFailed?'底图暂不可用 · 可通过下方列表查看地点':'Natural Earth 底图 · 地点为城市级示意'}</p>
     <div class="archive-tools archive-places">${visible.map(([id,[label]])=>`<button data-map-pin="${id}" aria-pressed="${id===key}">${label} · ${linked[id]?.size || 0} 人</button>`).join('')}</div>
     <h2>${name}的相关人物</h2><ul class="archive-directory">${[...(linked[key] || [])].map(([id,kinds])=>`<li><a href="#person/${id}/details"><strong>${esc(byId(id).name)}</strong><span>${[...kinds].map(esc).join(' · ')}</span></a></li>`).join('')}</ul>
@@ -637,6 +641,7 @@ document.addEventListener('click',event => {
   const mode = item.dataset.archiveMap;
   if (mode) {
     mapMode=mode;
+    mapCamera=null;
     if (location.hash !== '#map') location.hash='map';
     else render();
   } else {
@@ -651,6 +656,37 @@ document.addEventListener('keydown',event => {
   if (!pin || ![' ','Enter'].includes(event.key)) return;
   event.preventDefault();
   pin.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+});
+
+
+function applyArchiveCamera(map, camera) {
+  mapCamera = camera;
+  const bounds = map.dataset.mapBounds.split(' ').map(Number);
+  const view = camera || bounds;
+  map.setAttribute('viewBox', view.join(' '));
+  map.querySelectorAll('circle').forEach(pin => pin.setAttribute('r',view[2]/155));
+}
+
+document.addEventListener('wheel', event => {
+  const map = event.target.closest('.archive-map');
+  if (!map || !event.deltaY || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();
+  const matrix = map.getScreenCTM();
+  if (!matrix) return;
+  const anchor = new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix.inverse());
+  const [baseX, baseY, baseWidth, baseHeight] = map.dataset.mapBounds.split(' ').map(Number);
+  const [x,y,width,height] = mapCamera || [baseX,baseY,baseWidth,baseHeight];
+  const nextWidth = Math.min(baseWidth, Math.max(baseWidth/12, width*Math.exp(Math.sign(event.deltaY)*.17)));
+  const scale = nextWidth/width;
+  const nextHeight = height*scale;
+  const nextX = Math.min(baseX+baseWidth-nextWidth, Math.max(baseX,anchor.x-(anchor.x-x)*scale));
+  const nextY = Math.min(baseY+baseHeight-nextHeight, Math.max(baseY,anchor.y-(anchor.y-y)*scale));
+  applyArchiveCamera(map,[nextX,nextY,nextWidth,nextHeight]);
+}, {passive:false});
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('[data-map-reset]')) return;
+  applyArchiveCamera($('.archive-map'),null);
 });
 
 function fitDevice() {}
